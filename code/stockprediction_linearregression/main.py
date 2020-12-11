@@ -10,7 +10,6 @@ plt.style.use('bmh')
 df = pd.read_csv("./AAPL_Daily_Dec2016-Dec2020.csv")
 
 
-
 # Visualize the close price data
 plt.figure(figsize=(16,8))
 plt.title('Apple')
@@ -28,10 +27,8 @@ future_days = 50
 df['Prediction'] = df[['Adj Close']].shift(-future_days)
 
 
-
 # Create a feature data set (X) and convert it to a numpy array and remove the last 'x' rows/days
 X = np.array(df.drop(['Prediction'], 1))[:-future_days]
-
 
 # Create the target data set (y) and convert it to a numpy array and get all of the target values except the last 'x' rows
 Y = np.array(df['Prediction'])[:-future_days]
