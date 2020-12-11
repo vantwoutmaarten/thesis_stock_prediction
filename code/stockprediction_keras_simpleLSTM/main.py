@@ -119,8 +119,7 @@ plt.show()
 # %%
 # Now PREDICT VALUE FOR THE NEXT DAY
 apple_quote_df = web.DataReader('AAPL', data_source='yahoo', start='2016-01-01',  end='2020-11-09')
-# Create a new dataframe
-new_df = apple_quote_df.filter(['Close'])
+# Create a new dataframenew_df = apple_quote_df.filter(['Close'])
 # Get the last 60 day closing price values and convert to array
 last_60_days = new_df[-60:].values
 # Scale the data to be values between 0 and 1
