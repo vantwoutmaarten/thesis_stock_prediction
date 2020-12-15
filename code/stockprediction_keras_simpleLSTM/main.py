@@ -16,7 +16,7 @@ plt.style.use('fivethirtyeight')
 #Get the stock quote
 df = web.DataReader('AAPL', data_source='yahoo', start='2016-01-01',  end='2020-11-09')
 
-print(df)
+print(df.shape)
 
 #Visualize the closing price history
 plt.figure(figsize=(16,8))
@@ -28,17 +28,17 @@ plt.show()
 
 # Create a new dataframe with only the 'Close column'
 data = df.filter(['Close'])
+
 # Convert the dataframe to a numpy array
 dataset = data.values
 # Get the number of rows for training
 training_data_len = math.ceil(len(dataset)*0.8)
 
-print(training_data_len)
 
 # Scale the data
 scaler = MinMaxScaler(feature_range=(0,1))
 scaled_data = scaler.fit_transform(dataset)
-
+# %%
 # Create the training data set
 # Create the scaled training data set
 train_data = scaled_data[0:training_data_len , :]
