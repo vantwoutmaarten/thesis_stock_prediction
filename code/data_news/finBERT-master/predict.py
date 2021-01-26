@@ -29,4 +29,15 @@ model = BertForSequenceClassification.from_pretrained(args.model_path,num_labels
 #now = datetime.datetime.now().strftime("predictions_%B-%d-%Y-%I:%M.csv")
 random_filename = ''.join(random.choice(string.ascii_letters) for i in range(10))
 output = random_filename + '.csv'
+
+print(type(text))
+print(text)
+
+output = predict(text,model)
+
+print('Now print the output')
+
+print(type(output))
+print(output)
+
 predict(text,model,write_to_csv=True,path=os.path.join(args.output_dir,output))

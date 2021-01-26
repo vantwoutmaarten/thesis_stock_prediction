@@ -1,0 +1,5 @@
+sentence,logit,prediction,sentiment_score
+Bitcoin price hits 20000 for the first time in history.,[0.6038747  0.08038824 0.3157371 ],positive,0.52348644
+"Bitcoin hits 2-week high, breaking last big resistance before 20k.",[0.7814073  0.11436134 0.10423143],positive,0.66704595
+bitcoin averaging 200 procent gains per year proves it is eating the world.,[0.27185327 0.07330239 0.6548443 ],neutral,0.19855088
+bitcoin the third most crowded trade in global fund manager surver.,[0.07232033 0.15682113 0.7708585 ],neutral,-0.084500805
