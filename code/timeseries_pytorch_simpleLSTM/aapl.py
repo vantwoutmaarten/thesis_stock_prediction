@@ -17,8 +17,11 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #assuming 
 print('device isssss', device)
 
 #Get the stock quote
-df = web.DataReader('AAPL', data_source='yahoo', start='2016-01-01',  end='2020-11-09')
+# df = web.DataReader('AAPL', data_source='yahoo', start='2016-01-01',  end='2020-11-09')
+# data = df.filter(['Close'])
 
+df = pd.read_csv("./synthetic_data/brownian_scenarios/upward_mu_021_sig_065.csv")
+data = df.filter(['stockprice'])
 #%%
 #Visualize the closing price history
 # plt.figure(figsize=(16,8))
@@ -29,7 +32,7 @@ df = web.DataReader('AAPL', data_source='yahoo', start='2016-01-01',  end='2020-
 # plt.show()
 
 # Create a new dataframe with only the 'Close column'
-data = df.filter(['Close'])
+
 
 all_data = data.values
 
@@ -37,7 +40,7 @@ print('data info: ', data.info)
 
 
 # Get the number of rows for test
-test_data_len = math.ceil(len(all_data)*0.1)
+test_data_len = math.ceil(len(all_data)*0.25)
 
 test_data_size = test_data_len
 train_data = all_data[:-test_data_size]
@@ -57,7 +60,7 @@ train_data_normalized = torch.cuda.FloatTensor(train_data_normalized).view(-1)
 
 # %%
 # use a train windows that is domain dependent here 12, since montly data
-train_window = 10
+train_window = 365
 
 def create_inout_sequences(input_data, tw):
     inout_seq = []
