@@ -22,6 +22,8 @@ print('device isssss', device)
 
 df = pd.read_csv("./synthetic_data/brownian_scenarios/upward_mu_021_sig_065.csv")
 data = df.filter(['stockprice'])
+
+
 #%%
 #Visualize the closing price history
 # plt.figure(figsize=(16,8))
@@ -144,8 +146,12 @@ valid['Predictions'] = actual_predictions
 
 plt.figure(figsize=(16,8))
 plt.title('Close Price History')
-plt.plot(train['Close'])
-plt.plot(valid[['Close', 'Predictions']])
+
+# plt.plot(train['Close'])
+# plt.plot(valid[['Close', 'Predictions']])
+plt.plot(train['stockprice'])
+plt.plot(valid[['stockprice', 'Predictions']])
+
 plt.xlabel('Date', fontsize=18)
 plt.ylabel('Close Price USD ($)', fontsize=18)
 plt.legend(['Train', 'Target', 'Predictions'], loc='lower right')
