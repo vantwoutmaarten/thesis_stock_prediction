@@ -39,7 +39,7 @@ class Brownian():
             w[i] = w[i-1]+(yi/np.sqrt(n_step))
         
         return w
-    
+     
     def gen_normal(self,n_step=100):
         """
         Generate motion by drawing from the Normal distribution
@@ -127,6 +127,7 @@ def create_stock_price_scenario(mu, sigma, scenario_name):
     dt = 0.1
     # The stockprice is a brownian motion 7 days a week all year. 
     stockprice = b.stock_price(mu=mu,sigma=sigma,dt=0.1)
+    
 
     # The sp_no_missing_values will take the allyear stockprice and remove the weekends + 7 days a year random holidays.
     sp_no_missing_values = copy.deepcopy(stockprice)
@@ -161,5 +162,89 @@ def create_stock_price_scenario(mu, sigma, scenario_name):
     df.to_csv(output_loc)
     return stockprice
 
+
+
+def create_sinus_plus_brownian_noise_scenario(missing_percentage, period, scenario_name):
+    """
+    create a scenario of sinus + a brownian noise 
+    Default is three years, 1460 days, this can be changed in the stockprice function.
+    """
+    # The stockprice is a brownian motion 7 days a week all year. 
+    total_days = 1460
+    noise = b.gen_normal(1460)
+    days = np.arange(total_days)
+    sinus = np.sin(days/period)
+    noisy_sin = sinus+1.2*noise
+
+    
+
+    # The sp_no_missing_values will take the allyear stockprice and remove the weekends + 7 days a year random holidays.
+    sin_missing_values = copy.deepcopy(noisy_sin)
+
+
+    missing_counter = 0
+
+    while(missing_counter < missing_percentage*(total_days)):
+        randomday = random.randint(0, total_days)
+        if(sin_missing_values[randomday] != np.nan):
+            sin_missing_values[randomday] = np.nan
+            missing_counter = missing_counter + 1
+
+    plt.figure(figsize=(9,4))
+    plt.plot(sin_missing_values)
+    plt.legend([scenario_name],
+               loc='upper left')
+    plt.show()
+
+            
+    dict = {'noisy_sin': noisy_sin, 'noisy_sin_missing_values': sin_missing_values} 
+    df = pd.DataFrame(dict)
+    output_loc = 'synthetic_data/sinus_scenarios/' + scenario_name
+    df.to_csv(output_loc)
+    return noisy_sin
+
+def create_sinus_scenario(missing_percentage, period, scenario_name):
+    """
+    create a scenario of sinus + a brownian noise 
+    Default is three years, 1460 days, this can be changed in the stockprice function.git 
+    """
+    # The stockprice is a brownian motion 7 days a week all year. 
+    total_days = 300
+    days = np.arange(total_days)
+    sinus = np.sin(days/period)
+
+    # The sp_no_missing_values will take the allyear stockprice and remove the weekends + 7 days a year random holidays.
+    sin_missing_values = copy.deepcopy(sinus)
+
+
+    missing_counter = 0
+
+    while(missing_counter < missing_percentage*(total_days)):
+        randomday = random.randint(0, total_days)
+        if(sin_missing_values[randomday] != np.nan):
+            sin_missing_values[randomday] = np.nan
+            missing_counter = missing_counter + 1
+
+    plt.figure(figsize=(9,4))
+    plt.plot(sin_missing_values)
+    plt.legend([scenario_name],
+               loc='upper left')
+    plt.show()
+
+            
+    dict = {'sinus': sinus, 'noisy_sin_missing_values': sin_missing_values} 
+    df = pd.DataFrame(dict)
+    output_loc = 'synthetic_data/sinus_scenarios/' + scenario_name
+    df.to_csv(output_loc)
+    return noisy_sin
+
 # Scenario upward, sideways and downward, all three are made with the same settings and a few experiments. mu_021_sig_065
-create_stock_price_scenario(mu=0.21,sigma=0.65, scenario_name= 'sideways_mu_021_sig_065.csv')
+# create_stock_price_scenario(mu=0.21,sigma=0.65, scenario_name= 'noisy_sin_missing_10_065.csv')
+
+# create_sinus_plus_brownian_noise_scenario(missing_percentage= 0.20,period = 40, scenario_name= 'noisy_sin_period40_missing20.csv')
+create_sinus_scenario(missing_percentage= 0.20,period = 2, scenario_name= 'small_sin_period2_missing20.csv')
+
+
+
+
+
