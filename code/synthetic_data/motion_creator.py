@@ -200,7 +200,11 @@ def create_stock_price_scenario(mu, sigma, scenario_name):
 
 
 
+<<<<<<< HEAD:code/synthetic_data/motion_creator.py
 def create_sinus_plus_brownian_noise_scenario(missing_percentage, periodparameter, scenario_name):
+=======
+def create_sinus_plus_brownian_noise_scenario(missing_percentage, period, scenario_name):
+>>>>>>> ec1505116dbb6bac051bfb806402b060905eb870:code/synthetic_data/brownian_motion_creator.py
     """
     create a scenario of sinus + a brownian noise 
     Default is three years, 1460 days, this can be changed in the stockprice function.
@@ -209,7 +213,11 @@ def create_sinus_plus_brownian_noise_scenario(missing_percentage, periodparamete
     total_days = 1460
     noise = b.gen_normal(1460)
     days = np.arange(total_days)
+<<<<<<< HEAD:code/synthetic_data/motion_creator.py
     sinus = np.sin(days/periodparameter)
+=======
+    sinus = np.sin(days/period)
+>>>>>>> ec1505116dbb6bac051bfb806402b060905eb870:code/synthetic_data/brownian_motion_creator.py
     noisy_sin = sinus+1.2*noise
 
     
@@ -239,15 +247,25 @@ def create_sinus_plus_brownian_noise_scenario(missing_percentage, periodparamete
     df.to_csv(output_loc)
     return noisy_sin
 
+<<<<<<< HEAD:code/synthetic_data/motion_creator.py
 def create_sinus_scenario(missing_percentage, periodparameter, scenario_name):
+=======
+def create_sinus_scenario(missing_percentage, period, scenario_name):
+>>>>>>> ec1505116dbb6bac051bfb806402b060905eb870:code/synthetic_data/brownian_motion_creator.py
     """
     create a scenario of sinus + a brownian noise 
     Default is three years, 1460 days, this can be changed in the stockprice function.git 
     """
     # The stockprice is a brownian motion 7 days a week all year. 
+<<<<<<< HEAD:code/synthetic_data/motion_creator.py
     total_days = 1460
     days = np.arange(total_days)
     sinus = np.sin(days/periodparameter)
+=======
+    total_days = 300
+    days = np.arange(total_days)
+    sinus = np.sin(days/period)
+>>>>>>> ec1505116dbb6bac051bfb806402b060905eb870:code/synthetic_data/brownian_motion_creator.py
 
     # The sp_no_missing_values will take the allyear stockprice and remove the weekends + 7 days a year random holidays.
     sin_missing_values = copy.deepcopy(sinus)
@@ -317,11 +335,15 @@ def create_sinus_plus_stochastic_noise_scenario(missing_percentage, periodparame
 # create_stock_price_scenario(mu=0.21,sigma=0.65, scenario_name= 'noisy_sin_missing_10_065.csv')
 
 # create_sinus_plus_brownian_noise_scenario(missing_percentage= 0.20,period = 40, scenario_name= 'noisy_sin_period40_missing20.csv')
+<<<<<<< HEAD:code/synthetic_data/motion_creator.py
 
 # create_sinus_scenario(missing_percentage= 0.20,periodparameter = 2, scenario_name= 'small_sin_period2_missing20.csv')
 
 create_sinus_plus_stochastic_noise_scenario(missing_percentage= 0.20,periodparameter = 10, scenario_name= 'stochastic015_sin_period63_missing20.csv')
 
+=======
+create_sinus_scenario(missing_percentage= 0.20,period = 2, scenario_name= 'small_sin_period2_missing20.csv')
+>>>>>>> ec1505116dbb6bac051bfb806402b060905eb870:code/synthetic_data/brownian_motion_creator.py
 
 
 
