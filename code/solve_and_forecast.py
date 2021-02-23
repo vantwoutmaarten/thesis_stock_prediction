@@ -26,7 +26,7 @@ from sktime.utils.plotting import plot_series
 
 simplefilter("ignore", FutureWarning)
 
-%matplotlib inline
+# %matplotlib inline
 # %%
 ############################## Solver ##############################
 ###################### Type series: Upward brownian, missing values sol: no missing values comparison ############################

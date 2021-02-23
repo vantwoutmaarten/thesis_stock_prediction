@@ -99,7 +99,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 # %%
 ##### Train the model #####
 
-epochs = 50
+epochs = 3
 hist = np.zeros(epochs)
 start_time = time.time()
 

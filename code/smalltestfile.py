@@ -1,2 +1,3 @@
-import torch
-print(torch.__version__)
+from timeseries_pytorch_simpleLSTM import testmod
+
+testmod.greeting()
