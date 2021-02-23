@@ -27,64 +27,7 @@ from sktime.utils.plotting import plot_series
 simplefilter("ignore", FutureWarning)
 
 %matplotlib inline
-#%%
-########################### AIRLINE EXAMPLE ############################
-# y = load_airline()
-# fig, ax = plot_series(y)
-# ax.set(xlabel="Time", ylabel="Number of airline passengers")
 
-# # Split the airline data into train and test split.
-# y_train, y_test = temporal_train_test_split(y, test_size=36)
-# # plot_series(y_train, y_test, labels=["y_train", "y_test"])
-# print("the shape of the training and test is: ", y_train.shape[0], y_test.shape[0])
-
-# # Define the x values for the prediction. 
-# fh = np.arange(len(y_test)) + 1
-# fh
-
-# # using the naive forecaster of sktime
-# forecaster = NaiveForecaster(strategy="last")
-# forecaster.fit(y_train)
-# y_pred = forecaster.predict(fh)
-# # plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
-# smape_naive = smape_loss(y_pred, y_test)
-# # %%
-# # plot the detrender liner detrending
-# forecaster = PolynomialTrendForecaster(degree=1)
-# transformer = Detrender(forecaster=forecaster)
-# yt = transformer.fit_transform(y_train)
-
-# # internally, the Detrender uses the in-sample predictions
-# # of the PolynomialTrendForecaster
-# forecaster = PolynomialTrendForecaster(degree=1)
-# fh_ins = -np.arange(len(y_train))  # in-sample forecasting horizon
-# fh_ins
-# y_pred = forecaster.fit(y_train).predict(fh=fh_ins)
-
-# plot_series(y_train, y_pred, yt, labels=["y_train", "fitted linear trend", "residuals"]);
-# # %%
-# forecaster = AutoARIMA(sp=12, suppress_warnings=True)
-# forecaster.fit(y_train)
-# y_pred = forecaster.predict(fh)
-# plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
-# smape_ARIMA = smape_loss(y_test, y_pred)
-# print("For the airlines, the SMAPE of the Naive forecaster is: ", smape_naive, " and the SMAPE of the AutoArima forecaster is: ", smape_ARIMA)
-
-# # %%
-# # AutoArima with optimizer grid, but ?the best ARIMA is chosen already, so the grid is not useful here.
-# param_grid = {"sp": [2, 5, 12]}
-# forecaster = AutoARIMA(suppress_warnings=True)
-# #  we fit the forecaster on the initial window,
-# # and then use temporal cross-validation to find the optimal parameter
-# cv = SlidingWindowSplitter(initial_window=int(len(y_train) * 0.5))
-# gscv = ForecastingGridSearchCV(forecaster, cv=cv, param_grid=param_grid)
-# gscv.fit(y_train)
-# y_pred = gscv.predict(fh)
-
-# plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
-# smape_loss(y_test, y_pred)
-
-# gscv.best_params_
 # %%
 ############################## Solver ##############################
 ###################### Type series: Upward brownian, missing values sol: no missing values comparison ############################
@@ -92,8 +35,8 @@ simplefilter("ignore", FutureWarning)
 # df = df['stockprice']
 # df = pd.read_csv("synthetic_data/sinus_scenarios/noisy_sin_period20_missing20.csv")
 # df = df['noisy_sin']
-
-df = pd.read_csv("synthetic_data/sinus_scenarios/small_sin_period2_missing20.csv")
+print("experiment testing the autoarima function and checking if sin+brownian motion can be predicted with autoARIMA, -> only possible for short sequences")
+df = pd.read_csv("synthetic_data/sinus_scenarios/small_sin_period13_missing20.csv")
 df = df['sinus']
 
 y = df
@@ -109,6 +52,7 @@ print("the shape of the training and test is: ", y_train.shape[0], y_test.shape[
 fh = np.arange(len(y_test)) + 1
 
 # using the naive forecaster
+print("naive forecaster")
 forecaster = NaiveForecaster(strategy="last")
 forecaster.fit(y_train)
 y_pred = forecaster.predict(fh)
@@ -116,6 +60,7 @@ plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
 smape_naive = smape_loss(y_pred, y_test)
 # %%
 # using the linear forecaster
+print("linear forecaster")
 forecaster = PolynomialTrendForecaster(degree=1)
 forecaster.fit(y_train)
 y_pred = forecaster.predict(fh)
@@ -123,6 +68,7 @@ plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
 smape_linear = smape_loss(y_pred, y_test)
 #%%
 # plot the detrender liner detrending
+print("linear detrender")
 forecaster = PolynomialTrendForecaster(degree=1)
 transformer = Detrender(forecaster=forecaster)
 yt = transformer.fit_transform(y_train)
@@ -134,6 +80,7 @@ y_pred = forecaster.fit(y_train).predict(fh=fh_ins)
 plot_series(y_train, y_pred, yt, labels=["y_train", "fitted linear trend", "residuals"])
 #%%
 # plot the atuoarima solution
+print("autoarima solution for short sequence")
 forecaster = AutoARIMA(sp = 13, suppress_warnings=False)
 y_pred = forecaster.fit(y_train).predict(fh)
 plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
@@ -148,13 +95,13 @@ print("For the upward stock no missing values,\n the SMAPE of the Naive forecast
 # y = data
 # fig, ax = plot_series(y)
 # ax.set(xlabel="days", ylabel="synthethic data")
-
+print("captures simple sin with ar")
 forecaster = ARIMA(order = (12, 0, 0))
 y_pred = forecaster.fit(y_train).predict(fh)
 plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
 smape_ARIMA = smape_loss(y_test, y_pred)
 # %%
-df = pd.read_csv("synthetic_data/sinus_scenarios/sin_period10_missing20.csv")
+df = pd.read_csv("synthetic_data/sinus_scenarios/sin_period63_missing20.csv")
 df = df['sinus']
 
 y = df
@@ -174,7 +121,7 @@ y_pred = forecaster.fit(y_train).predict(fh)
 plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
 smape_ARIMA = smape_loss(y_test, y_pred)
 # %%
-df = pd.read_csv("synthetic_data/sinus_scenarios/sin_period40_missing20.csv")
+df = pd.read_csv("synthetic_data/sinus_scenarios/sin_period251_missing20.csv")
 df = df['sinus']
 
 y = df
@@ -194,7 +141,8 @@ y_pred = forecaster.fit(y_train).predict(fh)
 plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
 smape_ARIMA = smape_loss(y_test, y_pred)
 # %%
-df = pd.read_csv("synthetic_data/sinus_scenarios/noisy_sin_period20_missing20.csv")
+print("testing the AR models with different lags on sines with different periods + brownian noise")
+df = pd.read_csv("synthetic_data/sinus_scenarios/noisy_sin_period126_missing20.csv")
 df = df['noisy_sin']
 
 y = df
@@ -213,9 +161,10 @@ forecaster = ARIMA(order = (12, 0, 0))
 y_pred = forecaster.fit(y_train).predict(fh)
 plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
 smape_ARIMA = smape_loss(y_test, y_pred)
+smape_ARIMA
 print("lag 12")
 # %%
-df = pd.read_csv("synthetic_data/sinus_scenarios/noisy_sin_period20_missing20.csv")
+df = pd.read_csv("synthetic_data/sinus_scenarios/noisy_sin_period126_missing20.csv")
 df = df['noisy_sin']
 
 y = df
@@ -234,51 +183,10 @@ forecaster = ARIMA(order = (20, 0, 0))
 y_pred = forecaster.fit(y_train).predict(fh)
 plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
 smape_ARIMA = smape_loss(y_test, y_pred)
+smape_ARIMA
 print("lag 20")
 # %%
-df = pd.read_csv("synthetic_data/sinus_scenarios/noisy_sin_period40_missing20.csv")
-df = df['noisy_sin']
-
-y = df
-# fig, ax = plot_series(y)
-# ax.set(xlabel="days", ylabel="synthethic stock")
-
-# Split the airline data into train and test split.
-y_train, y_test = temporal_train_test_split(y, test_size=365)
-# plot_series(y_train, y_test, labels=["y_train", "y_test"])
-print("the shape of the training and test is: ", y_train.shape[0], y_test.shape[0])
-
-# Define the x values for the prediction. 
-fh = np.arange(len(y_test)) + 1
-
-forecaster = ARIMA(order = (12, 0, 0))
-y_pred = forecaster.fit(y_train).predict(fh)
-plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
-smape_ARIMA = smape_loss(y_test, y_pred)
-print("lag 12")
-# %%
-df = pd.read_csv("synthetic_data/sinus_scenarios/noisy_sin_period40_missing20.csv")
-df = df['noisy_sin']
-
-y = df
-# fig, ax = plot_series(y)
-# ax.set(xlabel="days", ylabel="synthethic stock")
-
-# Split the airline data into train and test split.
-y_train, y_test = temporal_train_test_split(y, test_size=365)
-# plot_series(y_train, y_test, labels=["y_train", "y_test"])
-print("the shape of the training and test is: ", y_train.shape[0], y_test.shape[0])
-
-# Define the x values for the prediction. 
-fh = np.arange(len(y_test)) + 1
-
-forecaster = ARIMA(order = (20, 0, 0))
-y_pred = forecaster.fit(y_train).predict(fh)
-plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
-smape_ARIMA = smape_loss(y_test, y_pred)
-print("lag 20")
-# %%
-df = pd.read_csv("synthetic_data/sinus_scenarios/noisy_sin_period20_missing20.csv")
+df = pd.read_csv("synthetic_data/sinus_scenarios/noisy_sin_period126_missing20.csv")
 df = df['noisy_sin']
 
 y = df
@@ -297,5 +205,146 @@ forecaster = ARIMA(order = (30, 0, 0))
 y_pred = forecaster.fit(y_train).predict(fh)
 plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
 smape_ARIMA = smape_loss(y_test, y_pred)
+smape_ARIMA
 print("lag 30")
+# %%
+df = pd.read_csv("synthetic_data/sinus_scenarios/noisy_sin_period251_missing20.csv")
+df = df['noisy_sin']
+
+y = df
+# fig, ax = plot_series(y)
+# ax.set(xlabel="days", ylabel="synthethic stock")
+
+# Split the airline data into train and test split.
+y_train, y_test = temporal_train_test_split(y, test_size=365)
+# plot_series(y_train, y_test, labels=["y_train", "y_test"])
+print("the shape of the training and test is: ", y_train.shape[0], y_test.shape[0])
+
+# Define the x values for the prediction. 
+fh = np.arange(len(y_test)) + 1
+
+forecaster = ARIMA(order = (12, 0, 0))
+y_pred = forecaster.fit(y_train).predict(fh)
+plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
+smape_ARIMA = smape_loss(y_test, y_pred)
+smape_ARIMA
+print("lag 12")
+# %%
+df = pd.read_csv("synthetic_data/sinus_scenarios/noisy_sin_period251_missing20.csv")
+df = df['noisy_sin']
+
+y = df
+# fig, ax = plot_series(y)
+# ax.set(xlabel="days", ylabel="synthethic stock")
+
+# Split the airline data into train and test split.
+y_train, y_test = temporal_train_test_split(y, test_size=365)
+# plot_series(y_train, y_test, labels=["y_train", "y_test"])
+print("the shape of the training and test is: ", y_train.shape[0], y_test.shape[0])
+
+# Define the x values for the prediction. 
+fh = np.arange(len(y_test)) + 1
+
+forecaster = ARIMA(order = (20, 0, 0))
+y_pred = forecaster.fit(y_train).predict(fh)
+plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
+smape_ARIMA = smape_loss(y_test, y_pred)
+smape_ARIMA
+print("lag 20")
+# %%
+print("experiment to check if AR can predict sin + little noise stochastic")
+df = pd.read_csv("synthetic_data/sinus_scenarios/stochastic015_sin_period31_missing20.csv")
+df = df['noisy_sin']
+
+y = df
+# fig, ax = plot_series(y)
+# ax.set(xlabel="days", ylabel="synthethic stock")
+
+# Split the airline data into train and test split.
+y_train, y_test = temporal_train_test_split(y, test_size=365)
+# plot_series(y_train, y_test, labels=["y_train", "y_test"])
+print("the shape of the training and test is: ", y_train.shape[0], y_test.shape[0])
+
+# Define the x values for the prediction. 
+fh = np.arange(len(y_test)) + 1
+
+forecaster = ARIMA(order = (31, 0, 0))
+y_pred = forecaster.fit(y_train).predict(fh)
+plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
+smape_ARIMA = smape_loss(y_test, y_pred)
+smape_ARIMA
+# %%
+print("experiment to check if AR can predict sin + double amount of noise stochastic")
+df = pd.read_csv("synthetic_data/sinus_scenarios/stochastic03_sin_period31_missing20.csv")
+df = df['noisy_sin']
+
+y = df
+# fig, ax = plot_series(y)
+# ax.set(xlabel="days", ylabel="synthethic stock")
+
+# Split the airline data into train and test split.
+y_train, y_test = temporal_train_test_split(y, test_size=365)
+# plot_series(y_train, y_test, labels=["y_train", "y_test"])
+print("the shape of the training and test is: ", y_train.shape[0], y_test.shape[0])
+
+# Define the x values for the prediction. 
+fh = np.arange(len(y_test)) + 1
+
+forecaster = ARIMA(order = (31, 0, 0))
+y_pred = forecaster.fit(y_train).predict(fh)
+plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
+smape_ARIMA = smape_loss(y_test, y_pred)
+smape_ARIMA
+# %%
+print("experiment to check if AR can predict LONGER sin + double amount of noise stochastic")
+df = pd.read_csv("synthetic_data/sinus_scenarios/stochastic03_sin_period63_missing20.csv")
+df = df['noisy_sin']
+
+y = df
+# fig, ax = plot_series(y)
+# ax.set(xlabel="days", ylabel="synthethic stock")
+
+# Split the airline data into train and test split.
+y_train, y_test = temporal_train_test_split(y, test_size=365)
+# plot_series(y_train, y_test, labels=["y_train", "y_test"])
+print("the shape of the training and test is: ", y_train.shape[0], y_test.shape[0])
+
+# Define the x values for the prediction. 
+fh = np.arange(len(y_test)) + 1
+
+forecaster = ARIMA(order = (31, 0, 0))
+y_pred = forecaster.fit(y_train).predict(fh)
+plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
+smape_ARIMA = smape_loss(y_test, y_pred)
+smape_ARIMA
+# %%
+# experiment to see if ARIMA can capture the sin + brownian noise when the correct values for p(ACF) autoregressive d and q(with PACF) for moving average are chosen
+from pandas.plotting import autocorrelation_plot
+
+df = pd.read_csv("synthetic_data/sinus_scenarios/noisy_sin_period126_missing20.csv")
+df = df['noisy_sin']
+y = df
+y_train, y_test = temporal_train_test_split(y, test_size=365)
+print("the shape of the training and test is: ", y_train.shape[0], y_test.shape[0])
+fh = np.arange(len(y_test)) + 1
+
+autocorrelation_plot(y_train)
+#many lags are above critical boundry so this does not matter
+
+# %%
+from statsmodels.graphics.tsaplots import plot_pacf
+plot_pacf(y_train, lags=20)
+#it seems that 11 is very important so q = 11
+# %%
+forecaster = ARIMA(order = (50, 1, 11))
+y_pred = forecaster.fit(y_train).predict(fh)
+plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
+smape_ARIMA = smape_loss(y_test, y_pred)
+smape_ARIMA
+# %%
+forecaster = ARIMA(order = (60, 1, 11))
+y_pred = forecaster.fit(y_train).predict(fh)
+plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
+smape_ARIMA = smape_loss(y_test, y_pred)
+smape_ARIMA
 # %%
