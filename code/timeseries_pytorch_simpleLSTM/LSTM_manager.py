@@ -12,9 +12,10 @@ import time
     
 from sklearn.preprocessing import MinMaxScaler
 
+
 ################ CREATE THE PYTORCH LSTM MODEL ###################################
 class LSTM(nn.Module):
-    def __init__(self, input_size=1, hidden_layer_size=100, output_size=1):
+    def __init__(self, input_size=1, hidden_layer_size=40, output_size=1):
         super().__init__()
         self.hidden_layer_size = hidden_layer_size
 
@@ -38,20 +39,20 @@ class LSTMHandler():
         Init class
         """
         self.data = None
+        self.data_name = None
         self.train_data_normalized = None
         # use a train windows that is domain dependent here 365 since it is daily data per year
-        self.train_window = 365
-        self.trainwindow = 365
+        self.train_window = 126
         self.test_data_size = None
         self.scaler = None
         self.device = None
+        self.hist = None
 
-    def create_train_test_data(self, data = None):
+    def create_train_test_data(self, data = None, data_name = None):
         # Create a new dataframe with only the 'Close column'
         self.data = data
+        self.data_name = data_name
         all_data = self.data.values
-
-        print('data info: ', data.info)
 
         # Get the number of rows for test
         test_data_len = math.ceil(len(all_data)*0.25)
@@ -72,7 +73,7 @@ class LSTMHandler():
         # Convert the data to a tensor
         self.train_data_normalized = torch.cuda.FloatTensor(train_data_normalized).view(-1)
         
-    def create_trained_model(self, modelpath):
+    def create_trained_model(self, modelpath, epochs):
         # Set Device 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #assuming gpu is available
         print('device isssss', device)
@@ -92,7 +93,8 @@ class LSTMHandler():
         optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
         
         ##### Train the model #####
-        epochs = 3
+        epochs = epochs
+        print(epochs)
         self.hist = np.zeros(epochs)
         start_time = time.time()
 
@@ -105,12 +107,12 @@ class LSTMHandler():
                 y_pred = model(seq)
 
                 single_loss = loss_function(y_pred, labels)
-                hist[i] = single_loss.item()
+                self.hist[i] = single_loss.item()
 
                 single_loss.backward()
                 optimizer.step()
             
-            if i%25 == 1:
+            if i%5 == 1:
                 print(f'epoch: {i:3} loss: {single_loss.item():10.8f}')
 
         print(f'epoch: {i:3} loss: {single_loss.item():10.8f}')
@@ -118,12 +120,13 @@ class LSTMHandler():
         training_time = time.time()-start_time
         print("Training time: {}".format(training_time))
 
-        path_to_save = "timeseries_pytorch_simpleLSTM/testmodel.pt"
+        path_to_save = modelpath
 
         torch.save(model.state_dict(), path_to_save)
         return
     
     def make_predictions_from_model(self, modelpath):
+
         # Set Device 
         print("start predicting")
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #assuming gpu is available
@@ -137,7 +140,7 @@ class LSTMHandler():
         model.cuda()
 
         model.eval()
-        print("model geladen Bitch")
+        print("model loaded")
 
         for i in range(fut_pred):
             seq = torch.cuda.FloatTensor(test_inputs[-self.train_window:])
@@ -148,57 +151,37 @@ class LSTMHandler():
 
         actual_predictions = self.scaler.inverse_transform(np.array(test_inputs[self.train_window:]).reshape(-1, 1))
 
-        print("predictions gemaakt Bitch")
-
         train = self.data[:-self.test_data_size]
         valid = self.data[-self.test_data_size:]
         valid['Predictions'] = actual_predictions
 
-        plt.figure(figsize=(16,8))
-        plt.title('Close Price History')
+        # plt.figure(figsize=(16,8))
+        # plt.title('Close Price History')
 
-        # plt.plot(train['Close'])
-        # plt.plot(valid[['Close', 'Predictions']])
-        plt.plot(train['stockprice'])
-        plt.plot(valid[['stockprice', 'Predictions']])
+        # plt.plot(train[self.data_name])
+        # plt.plot(valid[[self.data_name, 'Predictions']])
 
-        print("eerste plots gelukt")
-        plt.xlabel('Date', fontsize=18)
-        plt.ylabel('Close Price USD ($)', fontsize=18)
-        plt.legend(['Train', 'Target', 'Predictions'], loc='lower right')
+        # plt.xlabel('Date', fontsize=18)
+        # plt.ylabel('Close Price USD ($)', fontsize=18)
+        # plt.legend(['Train', 'Target', 'Predictions'], loc='lower right')
 
-        plt.show()
+        # plt.show()
 
+        # plt.figure(figsize=(16,8))
+        # plt.title('Training Loss', fontsize=25)
+        # plt.xlabel('Epoch', fontsize=18)
+        # plt.ylabel('Loss', fontsize=18)
+        # plt.show()
+
+        y_pred = pd.Series(valid['Predictions'])
+        y_pred.index = list(y_pred.index)
+        print("predictions made")
+        return y_pred
+    
+    def plot_training_error(self):
         plt.figure(figsize=(16,8))
         plt.title('Training Loss', fontsize=25)
         plt.xlabel('Epoch', fontsize=18)
         plt.ylabel('Loss', fontsize=18)
-        plt.plot(hist)
+        plt.plot(self.hist)
         plt.show()
-
-        print("alles werkt Bitch")
-        
-
-#Get the stock quote
-# df = web.DataReader('AAPL', data_source='yahoo', start='2016-01-01',  end='2020-11-09')
-# data = df.filter(['Close'])
-
-df = pd.read_csv("./synthetic_data/brownian_scenarios/upward_mu_021_sig_065.csv")
-data = df.filter(['stockprice'])
-
-s = LSTMHandler()
-s.create_train_test_data(data = data)
-
-# s.create_trained_model(modelpath="timeseries_pytorch_simpleLSTM/testmodel.pt")
-
-s.make_predictions_from_model(modelpath="timeseries_pytorch_simpleLSTM/testmodel.pt")
-
-#%%
-#Visualize the closing price history
-# plt.figure(figsize=(16,8))
-# plt.title('Close Price History')
-# plt.plot(df['Close'])
-# plt.xlabel('Date', fontsize=18)
-# plt.ylabel('Close Price USD ($)', fontsize=18)
-# plt.show()
-
