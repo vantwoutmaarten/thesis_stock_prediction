@@ -13,10 +13,14 @@ import time
 from sklearn.preprocessing import MinMaxScaler
 
 ###### making reproducable #######
-# torch.set_deterministic(True)
-# np.random.seed(0)
-# torch.manual_seed(0)
+import os
+os.environ['CUBLAS_WORKSPACE_CONFIG']=':16:8'
 
+torch.set_deterministic(True)
+np.random.seed(0)
+torch.manual_seed(0)
+torch.cuda.manual_seed_all(0)
+torch.backends.cudnn.deterministic = True
 
 ################ CREATE THE PYTORCH LSTM MODEL ###################################
 class LSTM(nn.Module):
@@ -47,7 +51,7 @@ class LSTMHandler():
         self.data_name = None
         self.train_data_normalized = None
         # use a train windows that is domain dependent here 365 since it is daily data per year
-        self.train_window = 512
+        self.train_window = 126
         self.test_data_size = None
         self.scaler = None
         self.device = None

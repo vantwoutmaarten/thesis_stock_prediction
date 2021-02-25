@@ -24,7 +24,6 @@ from sktime.performance_metrics.forecasting import sMAPE, smape_loss
 from sktime.transformations.series.detrend import Deseasonalizer, Detrender
 from sktime.utils.plotting import plot_series
 
-from timeseries_pytorch_simpleLSTM import testmod
 from timeseries_pytorch_simpleLSTM import LSTM_manager
 
 simplefilter("ignore", FutureWarning)
@@ -369,8 +368,6 @@ y_train, y_test = temporal_train_test_split(y, test_size=365)
 
 s = LSTM_manager.LSTMHandler()
 s.create_train_test_data(data = data, data_name = data_name)
-
-# %%
 
 y_pred = s.make_predictions_from_model(modelpath="timeseries_pytorch_simpleLSTM/noisy_sin_period126_epochs15_window252_HN40_lr00004_try2.pt")
 
