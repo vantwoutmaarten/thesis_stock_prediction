@@ -30,29 +30,6 @@ from timeseries_pytorch_simpleLSTM import LSTM_manager
 simplefilter("ignore", FutureWarning)
 
 %matplotlib inline
-# %%
-df = pd.read_csv("./synthetic_data/sinus_scenarios/noisy_sin_period126_missing20.csv")
-data_name = 'noisy_sin'
-data = df.filter([data_name])
-
-
-y = data[data_name]
-y_train, y_test = temporal_train_test_split(y, test_size=365)
-
-
-s = LSTM_manager.LSTMHandler()
-s.create_train_test_data(data = data, data_name = data_name)
-s.create_trained_model(modelpath="timeseries_pytorch_simpleLSTM/noisy_sin_period126_epochs20_window126_HN40.pt", epochs=20)
-
-
-y_pred = s.make_predictions_from_model(modelpath="timeseries_pytorch_simpleLSTM/noisy_sin_period126_epochs20_window126_HN40.pt")
-
-plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
-
-
-# %%
-
-s.plot_training_error()
 
 # %%
 ############################## Solver ##############################
@@ -377,3 +354,44 @@ plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
 smape_ARIMA = smape_loss(y_test, y_pred)
 smape_ARIMA
 # %%
+############################## lstm work ###########################
+############# Experiment manually optimizing hyperparameters trying to predict the sin + brownian motion
+
+# %%
+df = pd.read_csv("./synthetic_data/sinus_scenarios/noisy_sin_period126_missing20.csv")
+data_name = 'noisy_sin'
+data = df.filter([data_name])
+
+
+y = data[data_name]
+y_train, y_test = temporal_train_test_split(y, test_size=365)
+
+
+s = LSTM_manager.LSTMHandler()
+s.create_train_test_data(data = data, data_name = data_name)
+
+# %%
+
+y_pred = s.make_predictions_from_model(modelpath="timeseries_pytorch_simpleLSTM/noisy_sin_period126_epochs15_window252_HN40_lr00004_try2.pt")
+
+plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
+
+# %%
+y_pred = s.make_predictions_from_model(modelpath="timeseries_pytorch_simpleLSTM/noisy_sin_period126_epochs15_window252_HN40_lr00004_try2.pt")
+
+plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
+
+# %%
+y_pred = s.make_predictions_from_model(modelpath="timeseries_pytorch_simpleLSTM/noisy_sin_period126_epochs15_window252_HN40_lr00004.pt")
+
+plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
+
+# %%
+s.create_trained_model(modelpath="timeseries_pytorch_simpleLSTM/noisy_sin_period126_epochs6_window252_HN40_lr00004.pt", epochs=6)
+
+
+y_pred = s.make_predictions_from_model(modelpath="timeseries_pytorch_simpleLSTM/noisy_sin_period126_epochs6_window252_HN40_lr00004.pt")
+
+plot_series(y_train, y_test, y_pred, labels=["y_train", "y_test", "y_pred"])
+
+s.plot_training_error()

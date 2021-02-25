@@ -12,6 +12,11 @@ import time
     
 from sklearn.preprocessing import MinMaxScaler
 
+###### making reproducable #######
+# torch.set_deterministic(True)
+# np.random.seed(0)
+# torch.manual_seed(0)
+
 
 ################ CREATE THE PYTORCH LSTM MODEL ###################################
 class LSTM(nn.Module):
@@ -42,7 +47,7 @@ class LSTMHandler():
         self.data_name = None
         self.train_data_normalized = None
         # use a train windows that is domain dependent here 365 since it is daily data per year
-        self.train_window = 126
+        self.train_window = 512
         self.test_data_size = None
         self.scaler = None
         self.device = None
@@ -90,7 +95,7 @@ class LSTMHandler():
 
         model = LSTM().to(device)
         loss_function = nn.MSELoss()
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.0004)
         
         ##### Train the model #####
         epochs = epochs
