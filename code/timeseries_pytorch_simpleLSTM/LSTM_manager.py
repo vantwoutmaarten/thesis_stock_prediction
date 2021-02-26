@@ -12,6 +12,11 @@ import time
     
 from sklearn.preprocessing import MinMaxScaler
 
+from sktime.performance_metrics.forecasting import sMAPE, smape_loss
+from sktime.forecasting.model_selection import temporal_train_test_split
+
+import optuna
+
 ###### making reproducable #######
 import os
 os.environ['CUBLAS_WORKSPACE_CONFIG']=':16:8'
@@ -51,22 +56,27 @@ class LSTMHandler():
         self.data_name = None
         self.train_data_normalized = None
         # use a train windows that is domain dependent here 365 since it is daily data per year
-        self.train_window = 126
+        self.train_window = None
         self.test_data_size = None
         self.scaler = None
         self.device = None
         self.hist = None
+        self.stateDict = None
 
-    def create_train_test_data(self, data = None, data_name = None):
+    def create_train_test_data(self, data = None, data_name = None, test_size=365):
         # Create a new dataframe with only the 'Close column'
         self.data = data
         self.data_name = data_name
         all_data = self.data.values
 
-        # Get the number of rows for test
-        test_data_len = math.ceil(len(all_data)*0.25)
-
+        # Get the number of rows for test by percentage
+        # test_data_len = math.ceil(len(all_data)*test_percentage)
+        # Get number of rows for test by number
+        test_data_len = test_size
         self.test_data_size = test_data_len
+
+
+
         train_data = all_data[:-self.test_data_size]
         test_data = all_data[-self.test_data_size:]
         self.scaler = MinMaxScaler(feature_range=(-1, 1))
@@ -82,11 +92,14 @@ class LSTMHandler():
         # Convert the data to a tensor
         self.train_data_normalized = torch.cuda.FloatTensor(train_data_normalized).view(-1)
         
-    def create_trained_model(self, modelpath, epochs):
+    def create_trained_model(self, modelpath=None, epochs= 10, lr = 0.0005, hidden_layer_size = 40, train_window=365):
         # Set Device 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #assuming gpu is available
         print('device isssss', device)
 
+        self.hidden_layer_size = hidden_layer_size
+        self.train_window = train_window
+        
         def create_inout_sequences(input_data, tw):
             inout_seq = []
             for i in range(len(input_data)-tw):
@@ -95,11 +108,12 @@ class LSTMHandler():
                 inout_seq.append((train_seq, train_label))
             return inout_seq
 
+        
         train_inout_seq = create_inout_sequences(self.train_data_normalized, self.train_window)
 
-        model = LSTM().to(device)
+        model = LSTM(hidden_layer_size=hidden_layer_size).to(device)
         loss_function = nn.MSELoss()
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.0004)
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr)
         
         ##### Train the model #####
         epochs = epochs
@@ -129,12 +143,15 @@ class LSTMHandler():
         training_time = time.time()-start_time
         print("Training time: {}".format(training_time))
 
-        path_to_save = modelpath
+        self.stateDict = model.state_dict()
+        if(modelpath!=None):
+            path_to_save = modelpath
+            torch.save(self.stateDict, path_to_save)
 
-        torch.save(model.state_dict(), path_to_save)
-        return
+        return  self.stateDict
     
-    def make_predictions_from_model(self, modelpath):
+    def make_predictions_from_model(self, modelpath=None, modelstate=None):
+        ## The saved model path can be specified in Modelpath or the state of the model directly in ModelState
 
         # Set Device 
         print("start predicting")
@@ -144,10 +161,15 @@ class LSTMHandler():
         fut_pred = self.test_data_size
         test_inputs = self.train_data_normalized[-self.train_window:].tolist()
 
-        model = LSTM().to(device)
-        model.load_state_dict(torch.load(modelpath))
-        model.cuda()
+        model = LSTM(hidden_layer_size=self.hidden_layer_size).to(device)
+        if(modelpath != None):
+            model.load_state_dict(torch.load(modelpath))
+        elif(modelstate != None):
+            model.load_state_dict(modelstate)
+        else:
+            model.load_state_dict(self.stateDict)
 
+        model.cuda()
         model.eval()
         print("model loaded")
 
@@ -194,3 +216,25 @@ class LSTMHandler():
         plt.ylabel('Loss', fontsize=18)
         plt.plot(self.hist)
         plt.show()
+
+    def optimize(self):
+        y = self.data[self.data_name]
+        y_train, y_test = temporal_train_test_split(y, test_size=self.test_data_size)
+
+        def func(trial):
+            tw = trial.suggest_int('tw', 20, 600)
+            ep = trial.suggest_int('ep', 5, 20)
+            lr = trial.suggest_uniform('lr', 0.00001, 0.01)
+            hls = trial.suggest_int('hls', 10, 100)
+
+            trainedmodel = self.create_trained_model(epochs=ep, lr = lr, hidden_layer_size = hls, train_window=tw)
+            y_pred = self.make_predictions_from_model(modelstate = trainedmodel)
+            smape = smape_loss(y_test, y_pred)
+
+            return smape
+
+        study = optuna.create_study()
+
+        study.optimize(func, n_trials=30)
+
+        print(study.best_params)
