@@ -29,15 +29,15 @@ torch.backends.cudnn.deterministic = True
 
 ################ CREATE THE PYTORCH LSTM MODEL ###################################
 class LSTM(nn.Module):
-    def __init__(self, input_size=1, hidden_layer_size=40, output_size=1):
+    def __init__(self, input_size=1, hidden_layer_size=40, output_size=1, dropout = 0.0, num_layers=1):
         super().__init__()
         self.hidden_layer_size = hidden_layer_size
 
-        self.lstm = nn.LSTM(input_size, hidden_layer_size)
+        self.lstm = nn.LSTM(input_size, hidden_layer_size, dropout=dropout, num_layers=num_layers)
         self.linear = nn.Linear(hidden_layer_size, output_size)
 
-        self.hidden_cell = (torch.zeros(1,1,self.hidden_layer_size).cuda(), 
-                            torch.zeros(1,1,self.hidden_layer_size).cuda())
+        self.hidden_cell = (torch.zeros(num_layers,1,self.hidden_layer_size).cuda(), 
+                            torch.zeros(num_layers,1,self.hidden_layer_size).cuda())
         
     def forward(self, input_seq):
         lstm_out, self.hidden_cell = self.lstm(input_seq.view(len(input_seq), 1, -1), self.hidden_cell)
@@ -92,13 +92,14 @@ class LSTMHandler():
         # Convert the data to a tensor
         self.train_data_normalized = torch.cuda.FloatTensor(train_data_normalized).view(-1)
         
-    def create_trained_model(self, modelpath=None, epochs= 10, lr = 0.0005, hidden_layer_size = 40, train_window=365):
+    def create_trained_model(self, modelpath=None, epochs= 10, lr = 0.0005, hidden_layer_size = 40, train_window=365, optimizer_name="Adam", loss_name="MSELoss", num_layers = 1, dropout = 0.0):
         # Set Device 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #assuming gpu is available
         print('device isssss', device)
 
         self.hidden_layer_size = hidden_layer_size
         self.train_window = train_window
+        self.num_layers = num_layers
         
         def create_inout_sequences(input_data, tw):
             inout_seq = []
@@ -111,9 +112,11 @@ class LSTMHandler():
         
         train_inout_seq = create_inout_sequences(self.train_data_normalized, self.train_window)
 
-        model = LSTM(hidden_layer_size=hidden_layer_size).to(device)
-        loss_function = nn.MSELoss()
-        optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+        model = LSTM(hidden_layer_size=hidden_layer_size, num_layers = self.num_layers, dropout = dropout).to(device)
+        loss_function = getattr(nn, loss_name)()
+
+
+        optimizer = getattr(torch.optim, optimizer_name)(model.parameters(), lr=lr)
         
         ##### Train the model #####
         epochs = epochs
@@ -124,8 +127,8 @@ class LSTMHandler():
         for i in range(epochs):
             for seq, labels in train_inout_seq:
                 optimizer.zero_grad()
-                model.hidden_cell = (torch.zeros(1, 1, model.hidden_layer_size).cuda(),
-                                    torch.zeros(1, 1, model.hidden_layer_size).cuda())
+                model.hidden_cell = (torch.zeros(num_layers, 1, model.hidden_layer_size).cuda(),
+                                    torch.zeros(num_layers, 1, model.hidden_layer_size).cuda())
 
                 y_pred = model(seq)
 
@@ -161,7 +164,7 @@ class LSTMHandler():
         fut_pred = self.test_data_size
         test_inputs = self.train_data_normalized[-self.train_window:].tolist()
 
-        model = LSTM(hidden_layer_size=self.hidden_layer_size).to(device)
+        model = LSTM(hidden_layer_size=self.hidden_layer_size, num_layers = self.num_layers).to(device)
         if(modelpath != None):
             model.load_state_dict(torch.load(modelpath))
         elif(modelstate != None):
@@ -176,7 +179,7 @@ class LSTMHandler():
         for i in range(fut_pred):
             seq = torch.cuda.FloatTensor(test_inputs[-self.train_window:])
             with torch.no_grad():
-                model.hidden = (torch.zeros(1, 1, model.hidden_layer_size).cuda(), torch.zeros(1, 1, model.hidden_layer_size).cuda())
+                model.hidden = (torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda(), torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda())
                 modeloutput = model(seq).item()
                 test_inputs.append(modeloutput)
 
@@ -223,11 +226,16 @@ class LSTMHandler():
 
         def func(trial):
             tw = trial.suggest_int('tw', 20, 600)
-            ep = trial.suggest_int('ep', 5, 20)
+            ep = trial.suggest_int('ep', 4, 18)
             lr = trial.suggest_uniform('lr', 0.00001, 0.01)
-            hls = trial.suggest_int('hls', 10, 100)
+            hls = trial.suggest_int('hls', 1, 100)
+            opt = trial.suggest_categorical("optimizer", ["Adam", "RMSprop", "SGD"]) 
+            loss = trial.suggest_categorical("loss", ["MSELoss", "KLDivLoss"]) 
+            stackedlayers = trial.suggest_int('stacked', 1, 4)
+            dropout = trial.suggest_uniform('dropout', 0.0, 0.65)
 
-            trainedmodel = self.create_trained_model(epochs=ep, lr = lr, hidden_layer_size = hls, train_window=tw)
+            trainedmodel = self.create_trained_model(epochs=ep, lr = lr, hidden_layer_size = hls, train_window=tw, optimizer_name=opt, loss_name = loss, num_layers=stackedlayers, dropout = dropout)
+
             y_pred = self.make_predictions_from_model(modelstate = trainedmodel)
             smape = smape_loss(y_test, y_pred)
 
@@ -235,6 +243,6 @@ class LSTMHandler():
 
         study = optuna.create_study()
 
-        study.optimize(func, n_trials=30)
+        study.optimize(func, n_trials=50)
 
         print(study.best_params)
