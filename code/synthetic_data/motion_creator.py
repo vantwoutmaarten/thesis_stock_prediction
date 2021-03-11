@@ -4,6 +4,9 @@ import copy
 import random
 import pandas as pd
 
+np.random.seed(10)
+random.seed(10)
+
 class Stochastic():
     """
     A Stochastic motion class constructor
@@ -200,27 +203,17 @@ def create_stock_price_scenario(mu, sigma, scenario_name):
 
 
 
-<<<<<<< HEAD:code/synthetic_data/motion_creator.py
-def create_sinus_plus_brownian_noise_scenario(missing_percentage, periodparameter, scenario_name):
-=======
-def create_sinus_plus_brownian_noise_scenario(missing_percentage, period, scenario_name):
->>>>>>> ec1505116dbb6bac051bfb806402b060905eb870:code/synthetic_data/brownian_motion_creator.py
+def create_sinus_plus_brownian_noise_scenario(missing_percentage, periodparameter, scenario_name, days = 3650):
     """
     create a scenario of sinus + a brownian noise 
     Default is three years, 1460 days, this can be changed in the stockprice function.
     """
     # The stockprice is a brownian motion 7 days a week all year. 
-    total_days = 1460
-    noise = b.gen_normal(1460)
+    total_days = days
+    noise = b.gen_normal(days)
     days = np.arange(total_days)
-<<<<<<< HEAD:code/synthetic_data/motion_creator.py
     sinus = np.sin(days/periodparameter)
-=======
-    sinus = np.sin(days/period)
->>>>>>> ec1505116dbb6bac051bfb806402b060905eb870:code/synthetic_data/brownian_motion_creator.py
     noisy_sin = sinus+1.2*noise
-
-    
 
     # The sp_no_missing_values will take the allyear stockprice and remove the weekends + 7 days a year random holidays.
     sin_missing_values = copy.deepcopy(noisy_sin)
@@ -243,8 +236,10 @@ def create_sinus_plus_brownian_noise_scenario(missing_percentage, period, scenar
             
     dict = {'noisy_sin': noisy_sin, 'noisy_sin_missing_values': sin_missing_values} 
     df = pd.DataFrame(dict)
-    output_loc = 'synthetic_data/sinus_scenarios/' + scenario_name
-    df.to_csv(output_loc)
+    if scenario_name:
+        output_loc = 'synthetic_data/sinus_scenarios/' + scenario_name
+        df.to_csv(output_loc)
+        print("hello")
     return noisy_sin
 
 def create_sinus_scenario(missing_percentage, periodparameter, scenario_name):
@@ -294,11 +289,8 @@ def create_sinus_plus_stochastic_noise_scenario(missing_percentage, periodparame
     sinus = np.sin(days/periodparameter)
     noisy_sin = sinus+0.15*noise
 
-    
-
     # The sp_no_missing_values will take the allyear stockprice and remove the weekends + 7 days a year random holidays.
     sin_missing_values = copy.deepcopy(noisy_sin)
-
 
     missing_counter = 0
 
@@ -321,6 +313,42 @@ def create_sinus_plus_stochastic_noise_scenario(missing_percentage, periodparame
     df.to_csv(output_loc)
     return noisy_sin
 
+def create_2D_sinus_plus_brownian_similar(periodparameter, scenario_name):
+    # Here I create the sinus + the brownian motion. You take the days you want plus the lag, because the NaN columns drop. 
+
+    noisy_sin = create_sinus_plus_brownian_noise_scenario(missing_percentage=0.0, periodparameter=periodparameter,scenario_name="", days = 1466)
+
+    noisy_sin_series = pd.Series(noisy_sin)
+
+    frame = {'noisy_sin' : noisy_sin_series}
+
+    df = pd.DataFrame(frame)
+    # Here I create the new column that is shifted by 4 values. 
+    df_lagged = df.copy()
+
+    shifted = df.shift(6)
+    shifted.columns = [x + "_lag" + str(6) for x in df.columns]
+
+    df_lagged = pd.concat((df_lagged, shifted), axis=1)
+
+    df_lagged = df_lagged.dropna()
+
+    df_lagged = df_lagged.reset_index(drop=True)
+
+    plt.plot(df_lagged['noisy_sin'])
+    plt.plot(df_lagged['noisy_sin_lag6'])
+
+    plt.show()
+
+    if scenario_name:
+        output_loc = 'synthetic_data/sinus_scenarios/' + scenario_name
+        df_lagged.to_csv(output_loc)
+        print("hello")
+
+    print(df_lagged)
+    return df
+
+
 # Scenario upward, sideways and downward, all three are made with the same settings and a few experiments. mu_021_sig_065
 # create_stock_price_scenario(mu=0.21,sigma=0.65, scenario_name= 'noisy_sin_missing_10_065.csv')
 
@@ -328,10 +356,11 @@ def create_sinus_plus_stochastic_noise_scenario(missing_percentage, periodparame
 
 # create_sinus_scenario(missing_percentage= 0.20,periodparameter = 2, scenario_name= 'small_sin_period2_missing20.csv')
 
-create_sinus_plus_stochastic_noise_scenario(missing_percentage= 0.20,periodparameter = 10, scenario_name= 'stochastic015_sin_period63_missing20.csv')
+# create_sinus_plus_stochastic_noise_scenario(missing_percentage= 0.20,periodparameter = 10, scenario_name= 'stochastic015_sin_period63_missing20.csv')
 
 
+# create_sinus_plus_brownian_noise_scenario(missing_percentage= 0.20,periodparameter = 20, scenario_name= 'noisy_sin_period126_missing20_year10.csv')
 
-
+create_2D_sinus_plus_brownian_similar(periodparameter = 20, scenario_name= '2D_noisy_sin_period126_year4_lag6_seed10.csv')
 
 
