@@ -249,7 +249,7 @@ class LSTMHandler():
         y = self.data[self.data_name]
         y_train, y_test = temporal_train_test_split(y, test_size=self.test_data_size)
 
-        neptune_callback = opt_utils.NeptuneCallback()
+        neptune_callback = opt_utils.NeptuneCallback(log_study=True, log_charts=True)
 
         def func(trial):
             tw = trial.suggest_int('tw', 20, 600)
@@ -279,6 +279,7 @@ class LSTMHandler():
 
         study = optuna.create_study()
 
-        study.optimize(func, n_trials=10, callbacks=[neptune_callback])
-
+        study.optimize(func, n_trials=4, callbacks=[neptune_callback])
+        opt_utils.log_study_info(study)
+        
         print(study.best_params)
