@@ -316,7 +316,7 @@ def create_sinus_plus_stochastic_noise_scenario(missing_percentage, periodparame
 def create_2D_sinus_plus_brownian_similar(periodparameter, scenario_name):
     # Here I create the sinus + the brownian motion. You take the days you want plus the lag, because the NaN columns drop. 
 
-    noisy_sin = create_sinus_plus_brownian_noise_scenario(missing_percentage=0.0, periodparameter=periodparameter,scenario_name="", days = 1466)
+    noisy_sin = create_sinus_plus_brownian_noise_scenario(missing_percentage=0.0, periodparameter=periodparameter,scenario_name="", days = 1490)
 
     noisy_sin_series = pd.Series(noisy_sin)
 
@@ -326,8 +326,8 @@ def create_2D_sinus_plus_brownian_similar(periodparameter, scenario_name):
     # Here I create the new column that is shifted by 4 values. 
     df_lagged = df.copy()
 
-    shifted = df.shift(6)
-    shifted.columns = [x + "_lag" + str(6) for x in df.columns]
+    shifted = df.shift(30)
+    shifted.columns = [x + "_lag" + str(30) for x in df.columns]
 
     df_lagged = pd.concat((df_lagged, shifted), axis=1)
 
@@ -336,7 +336,7 @@ def create_2D_sinus_plus_brownian_similar(periodparameter, scenario_name):
     df_lagged = df_lagged.reset_index(drop=True)
 
     plt.plot(df_lagged['noisy_sin'])
-    plt.plot(df_lagged['noisy_sin_lag6'])
+    plt.plot(df_lagged['noisy_sin_lag30'])
 
     plt.show()
 
@@ -361,6 +361,6 @@ def create_2D_sinus_plus_brownian_similar(periodparameter, scenario_name):
 
 # create_sinus_plus_brownian_noise_scenario(missing_percentage= 0.20,periodparameter = 20, scenario_name= 'noisy_sin_period126_missing20_year10.csv')
 
-create_2D_sinus_plus_brownian_similar(periodparameter = 20, scenario_name= '2D_noisy_sin_period126_year4_lag6_seed10.csv')
+create_2D_sinus_plus_brownian_similar(periodparameter = 20, scenario_name= '2D_noisy_sin_period126_year4_lag30_seed10.csv')
 
 

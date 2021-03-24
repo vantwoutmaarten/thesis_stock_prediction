@@ -18,6 +18,7 @@ from sktime.forecasting.model_selection import temporal_train_test_split
 # from soft_dtw_cuda import SoftDTW
 
 import optuna
+import neptune
 
 ###### making reproducable #######
 import os
@@ -107,15 +108,16 @@ class LSTMHandler():
         # Convert the data to a tensor
         self.train_data_normalized = torch.cuda.FloatTensor(train_data_normalized).view(-1)
         
-    def create_trained_model(self, modelpath=None, epochs= 10, lr = 0.0005, hidden_layer_size = 40, train_window=365, optimizer_name="Adam", loss_name="MSELoss", num_layers = 1, dropout = 0.0):
+    def create_trained_model(self, params=None, modelpath=None):
+        
         # Set Device 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #assuming gpu is available
         print('device isssss', device)
         print(torch.cuda.get_device_name(0))
 
-        self.hidden_layer_size = hidden_layer_size
-        self.train_window = train_window
-        self.num_layers = num_layers
+        self.hidden_layer_size = params['hls']
+        self.train_window = params['train_window']
+        self.num_layers = params['num_layers']
         
         def create_inout_sequences(input_data, tw):
             inout_seq = []
@@ -128,14 +130,14 @@ class LSTMHandler():
         
         train_inout_seq = create_inout_sequences(self.train_data_normalized, self.train_window)
 
-        model = LSTM(hidden_layer_size=hidden_layer_size, num_layers = self.num_layers, dropout = dropout).to(device)
-        loss_function = getattr(nn, loss_name)()
+        model = LSTM(hidden_layer_size=self.hidden_layer_size, num_layers = self.num_layers, dropout = params['dropout']).to(device)
+        loss_function = getattr(nn, params['loss'])()
 
 
-        optimizer = getattr(torch.optim, optimizer_name)(model.parameters(), lr=lr)
+        optimizer = getattr(torch.optim, params['opt'])(model.parameters(), lr=params['lr'])
         
         ##### Train the model #####
-        epochs = epochs
+        epochs = params['epochs']
         print(epochs)
         self.hist = np.zeros(epochs)
         start_time = time.time()
@@ -143,17 +145,20 @@ class LSTMHandler():
         for i in range(epochs):
             for seq, labels in train_inout_seq:
                 optimizer.zero_grad()
-                model.hidden_cell = (torch.zeros(num_layers, 1, model.hidden_layer_size).cuda(),
-                                    torch.zeros(num_layers, 1, model.hidden_layer_size).cuda())
+                model.hidden_cell = (torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda(),
+                                    torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda())
 
                 y_pred = model(seq)
 
                 single_loss = loss_function(y_pred, labels)
-                self.hist[i] = single_loss.item()
 
                 # WHEN SHOULD THE LOSS BE AGGREGATED WITH mean()
-                single_loss.backward(retain_graph=True)
+                single_loss.backward()
+
                 optimizer.step()
+
+            neptune.log_metric('loss', single_loss)
+            self.hist[i] = single_loss.item()
             
             # if i%1 == 1:
             print(f'epoch: {i:3} loss: {single_loss.item():10.8f}')
@@ -167,6 +172,7 @@ class LSTMHandler():
         if(modelpath!=None):
             path_to_save = modelpath
             torch.save(self.stateDict, path_to_save)
+            neptune.log_artifact(path_to_save)
 
         return  self.stateDict
     
@@ -196,7 +202,7 @@ class LSTMHandler():
         for i in range(fut_pred):
             seq = torch.cuda.FloatTensor(test_inputs[-self.train_window:])
             with torch.no_grad():
-                model.hidden = (torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda(), torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda())
+                model.hidden_cell = (torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda(), torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda())
                 modeloutput = model(seq).item()
                 test_inputs.append(modeloutput)
 
@@ -230,12 +236,13 @@ class LSTMHandler():
         return y_pred
     
     def plot_training_error(self):
-        plt.figure(figsize=(16,8))
+        fig = plt.figure(figsize=(16,8))
         plt.title('Training Loss', fontsize=25)
         plt.xlabel('Epoch', fontsize=18)
         plt.ylabel('Loss', fontsize=18)
         plt.plot(self.hist)
-        plt.show()
+        # plt.show()
+        return fig
 
     def optimize(self):
         y = self.data[self.data_name]

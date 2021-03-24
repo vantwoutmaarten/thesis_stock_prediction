@@ -1,2 +1,2 @@
-import torch
-print(torch.version.cuda)
+import matplotlib
+print('matplotlib: {}'.format(matplotlib.__version__))

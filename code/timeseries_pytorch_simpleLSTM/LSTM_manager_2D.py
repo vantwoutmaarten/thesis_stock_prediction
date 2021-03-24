@@ -18,6 +18,7 @@ from sktime.forecasting.model_selection import temporal_train_test_split
 # from soft_dtw_cuda import SoftDTW
 
 import optuna
+import neptune
 
 ###### making reproducable #######
 import os
@@ -38,7 +39,7 @@ torch.backends.cudnn.deterministic = True
 #%%
 ################ CREATE THE PYTORCH LSTM MODEL ###################################
 class LSTM(nn.Module):
-    def __init__(self, input_size=1, hidden_layer_size=40, output_size=1, dropout = 0.0, num_layers=1):
+    def __init__(self, input_size=2, hidden_layer_size=40, output_size=2, dropout = 0.0, num_layers=1):
         super().__init__()
         self.hidden_layer_size = hidden_layer_size
         print('lstm input size', input_size)
@@ -50,13 +51,13 @@ class LSTM(nn.Module):
         
     def forward(self, input_seq):
         # input_seq = input_seq.view(int(len(input_seq)/15), 1, 15)
-        input_seq = input_seq.view(len(input_seq), 1, -1)
+        input_seq = input_seq.view(len(input_seq), 1, 2)
 
         lstm_out, self.hidden_cell = self.lstm(input_seq, self.hidden_cell)
 
         predictions = self.linear(lstm_out.view(len(input_seq), -1))
         # predictions = self.linear(lstm_out)
-        return predictions[-1]
+        return predictions[-1,:]
       
 class LSTMHandler():
     """
@@ -68,6 +69,7 @@ class LSTMHandler():
         """
         self.data = None
         self.data_name = None
+        self.lagged_data_name = None
         self.train_data_normalized = None
         # use a train windows that is domain dependent here 365 since it is daily data per year
         self.train_window = None
@@ -77,19 +79,18 @@ class LSTMHandler():
         self.hist = None
         self.stateDict = None
 
-    def create_train_test_data(self, data = None, data_name = None, test_size=365):
+    def create_train_test_data(self, data = None, data_name = None, lagged_data_name=None, test_size=365):
         # Create a new dataframe with only the 'Close column'
         self.data = data
         self.data_name = data_name
-        all_data = self.data.values
+        self.lagged_data_name = lagged_data_name
+        all_data = self.data
 
         # Get the number of rows for test by percentage
         # test_data_len = math.ceil(len(all_data)*test_percentage)
         # Get number of rows for test by number
         test_data_len = test_size
         self.test_data_size = test_data_len
-
-
 
         train_data = all_data[:-self.test_data_size]
         test_data = all_data[-self.test_data_size:]
@@ -100,22 +101,22 @@ class LSTMHandler():
         print('test data shape' , test_data.shape)
 
         # reshape is necessa4ry because each row should be a sample so convert (132) -> (132,1)
-        train_data_normalized = self.scaler.fit_transform(train_data.reshape(-1, 1))
+        train_data_normalized = self.scaler.fit_transform(train_data)
 
         # maybe data normalization shoudl only be applied to training data and not on test data
 
         # Convert the data to a tensor
-        self.train_data_normalized = torch.cuda.FloatTensor(train_data_normalized).view(-1)
+        self.train_data_normalized = torch.cuda.FloatTensor(train_data_normalized).view(-1,2)
         
-    def create_trained_model(self, modelpath=None, epochs= 10, lr = 0.0005, hidden_layer_size = 40, train_window=365, optimizer_name="Adam", loss_name="MSELoss", num_layers = 1, dropout = 0.0):
+    def create_trained_model(self, params=None, modelpath=None):
         # Set Device 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #assuming gpu is available
         print('device isssss', device)
         print(torch.cuda.get_device_name(0))
 
-        self.hidden_layer_size = hidden_layer_size
-        self.train_window = train_window
-        self.num_layers = num_layers
+        self.hidden_layer_size = params['hls']
+        self.train_window = params['train_window']
+        self.num_layers = params['num_layers']
         
         def create_inout_sequences(input_data, tw):
             inout_seq = []
@@ -128,14 +129,14 @@ class LSTMHandler():
         
         train_inout_seq = create_inout_sequences(self.train_data_normalized, self.train_window)
 
-        model = LSTM(hidden_layer_size=hidden_layer_size, num_layers = self.num_layers, dropout = dropout).to(device)
-        loss_function = getattr(nn, loss_name)()
+        model = LSTM(hidden_layer_size=self.hidden_layer_size, num_layers = self.num_layers, dropout = params['dropout']).to(device)
+        loss_function = getattr(nn, params['loss'])()
 
 
-        optimizer = getattr(torch.optim, optimizer_name)(model.parameters(), lr=lr)
+        optimizer = getattr(torch.optim, params['opt'])(model.parameters(), lr=params['lr'])
         
         ##### Train the model #####
-        epochs = epochs
+        epochs = params['epochs']
         print(epochs)
         self.hist = np.zeros(epochs)
         start_time = time.time()
@@ -143,17 +144,19 @@ class LSTMHandler():
         for i in range(epochs):
             for seq, labels in train_inout_seq:
                 optimizer.zero_grad()
-                model.hidden_cell = (torch.zeros(num_layers, 1, model.hidden_layer_size).cuda(),
-                                    torch.zeros(num_layers, 1, model.hidden_layer_size).cuda())
+                model.hidden_cell = (torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda(),
+                                    torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda())
 
                 y_pred = model(seq)
-
+                y_pred = y_pred.view(1,2)
                 single_loss = loss_function(y_pred, labels)
-                self.hist[i] = single_loss.item()
 
                 # WHEN SHOULD THE LOSS BE AGGREGATED WITH mean()
                 single_loss.backward(retain_graph=True)
                 optimizer.step()
+                
+            neptune.log_metric('loss', single_loss)
+            self.hist[i] = single_loss.item()
             
             # if i%1 == 1:
             print(f'epoch: {i:3} loss: {single_loss.item():10.8f}')
@@ -167,6 +170,7 @@ class LSTMHandler():
         if(modelpath!=None):
             path_to_save = modelpath
             torch.save(self.stateDict, path_to_save)
+            neptune.log_artifact(path_to_save)
 
         return  self.stateDict
     
@@ -179,7 +183,7 @@ class LSTMHandler():
         
         ####### making predictions #############
         fut_pred = self.test_data_size
-        test_inputs = self.train_data_normalized[-self.train_window:].tolist()
+        test_inputs = self.train_data_normalized[-self.train_window:]
 
         model = LSTM(hidden_layer_size=self.hidden_layer_size, num_layers = self.num_layers).to(device)
         if(modelpath != None):
@@ -196,46 +200,36 @@ class LSTMHandler():
         for i in range(fut_pred):
             seq = torch.cuda.FloatTensor(test_inputs[-self.train_window:])
             with torch.no_grad():
-                model.hidden = (torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda(), torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda())
-                modeloutput = model(seq).item()
-                test_inputs.append(modeloutput)
+                model.hidden_cell = (torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda(), torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda())
+                modeloutput = model(seq).view(1,2)
+                test_inputs = torch.cat((test_inputs, modeloutput), 0)
+                
+                # test_inputs.append(modeloutput)
 
-        actual_predictions = self.scaler.inverse_transform(np.array(test_inputs[self.train_window:]).reshape(-1, 1))
+        actual_predictions = self.scaler.inverse_transform(np.array((test_inputs[self.train_window:]).reshape(-1, 2).cpu()))
 
         train = self.data[:-self.test_data_size]
         valid = self.data[-self.test_data_size:]
-        valid['Predictions'] = actual_predictions
+        valid['Prediction'] = actual_predictions[:,0]
 
-        # plt.figure(figsize=(16,8))
-        # plt.title('Close Price History')
-
-        # plt.plot(train[self.data_name])
-        # plt.plot(valid[[self.data_name, 'Predictions']])
-
-        # plt.xlabel('Date', fontsize=18)
-        # plt.ylabel('Close Price USD ($)', fontsize=18)
-        # plt.legend(['Train', 'Target', 'Predictions'], loc='lower right')
-
-        # plt.show()
-
-        # plt.figure(figsize=(16,8))
-        # plt.title('Training Loss', fontsize=25)
-        # plt.xlabel('Epoch', fontsize=18)
-        # plt.ylabel('Loss', fontsize=18)
-        # plt.show()
-
-        y_pred = pd.Series(valid['Predictions'])
+        y_pred = pd.Series(valid['Prediction'])
         y_pred.index = list(y_pred.index)
         print("predictions made")
-        return y_pred
+        valid['Prediction_Lag'] = actual_predictions[:,1]
+
+        y_pred_lag = pd.Series(valid['Prediction_Lag'])
+        y_pred_lag.index = list(y_pred.index)
+
+        return y_pred, y_pred_lag
     
     def plot_training_error(self):
-        plt.figure(figsize=(16,8))
+        fig = plt.figure(figsize=(16,8))
         plt.title('Training Loss', fontsize=25)
         plt.xlabel('Epoch', fontsize=18)
         plt.ylabel('Loss', fontsize=18)
         plt.plot(self.hist)
-        plt.show()
+        # plt.show()
+        return fig
 
     def optimize(self):
         y = self.data[self.data_name]
