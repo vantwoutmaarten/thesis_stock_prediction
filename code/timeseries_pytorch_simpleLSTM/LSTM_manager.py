@@ -19,6 +19,7 @@ from sktime.forecasting.model_selection import temporal_train_test_split
 
 import optuna
 import neptune
+import neptunecontrib.monitoring.optuna as opt_utils
 
 ###### making reproducable #######
 import os
@@ -248,9 +249,11 @@ class LSTMHandler():
         y = self.data[self.data_name]
         y_train, y_test = temporal_train_test_split(y, test_size=self.test_data_size)
 
+        neptune_callback = opt_utils.NeptuneCallback()
+
         def func(trial):
             tw = trial.suggest_int('tw', 20, 600)
-            ep = trial.suggest_int('ep', 4, 25)
+            ep = trial.suggest_int('ep', 1, 2)
             lr = trial.suggest_uniform('lr', 0.00001, 0.01)
             hls = trial.suggest_int('hls', 1, 100)
             opt = trial.suggest_categorical("optimizer", ["Adam", "RMSprop", "SGD"]) 
@@ -258,7 +261,16 @@ class LSTMHandler():
             stackedlayers = trial.suggest_int('stacked', 1, 2)
             dropout = trial.suggest_uniform('dropout', 0.0, 0.65)
 
-            trainedmodel = self.create_trained_model(epochs=ep, lr = lr, hidden_layer_size = hls, train_window=tw, optimizer_name=opt, loss_name = loss, num_layers=stackedlayers, dropout = dropout)
+            PARAMS = {'epochs': ep,
+            'lr': lr,
+            'hls' : hls,
+            'train_window': tw, 
+            'opt' : opt,
+            'loss' : loss,
+            'dropout': dropout,
+            'num_layers': stackedlayers}
+
+            trainedmodel = self.create_trained_model(params=PARAMS)
 
             y_pred = self.make_predictions_from_model(modelstate = trainedmodel)
             smape = smape_loss(y_test, y_pred)
@@ -267,6 +279,6 @@ class LSTMHandler():
 
         study = optuna.create_study()
 
-        study.optimize(func, n_trials=40)
+        study.optimize(func, n_trials=10, callbacks=[neptune_callback])
 
         print(study.best_params)
