@@ -32,7 +32,7 @@ torch.cuda.manual_seed_all(0)
 torch.backends.cudnn.deterministic = True
 
 # the detect anomaly is just for debugging, but sometimes it solves a problem of nvidia graphics drivers on windows.
-# torch.autograd.set_detect_anomaly(True)
+torch.autograd.set_detect_anomaly(True)
 ## os.environ[‘CUDA_LAUNCH_BLOCKING’] = 1 if 1 all nothing happens asynchronizly, maybe it helps to debug something but should not be used in production I think. 
 # check influence on training time
 # os.environ[‘CUDA_LAUNCH_BLOCKING’] = 1
@@ -274,8 +274,9 @@ class LSTMHandler():
 
             y_pred = self.make_predictions_from_model(modelstate = trainedmodel)
             smape = smape_loss(y_test, y_pred)
+            mape = mape_loss(y_test, y_pred)
 
-            return smape
+            return smape, mape
 
         study = optuna.create_study()
 

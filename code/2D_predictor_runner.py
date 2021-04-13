@@ -17,7 +17,7 @@ import optuna
 
 import neptune
 from neptunecontrib.api import log_chart
-
+    
 neptune.init(project_qualified_name='mavantwout/sandbox',
              api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiODBkNzdjMDUtYmYxZi00ODFjLWExN2MtNjk3Y2MwZDE5N2U2In0=',
              )
@@ -70,42 +70,42 @@ log_chart(name='univariate_plot', chart=fig)
 neptune.stop()
  #%%
  ############################  TEST 2  ########################## 
-neptune.create_experiment('paramstest_2D', params = PARAMS)
-df = pd.read_csv("./synthetic_data/sinus_scenarios/2D_noisy_sin_period126_year4_lag6_seed10.csv")
+# neptune.create_experiment('paramstest_2D', params = PARAMS)
+# df = pd.read_csv("./synthetic_data/sinus_scenarios/2D_noisy_sin_period126_year4_lag6_seed10.csv")
 
-data_name = 'noisy_sin'
-lagged_data_name = 'noisy_sin_lag6'
-data = df.filter(items=[data_name, lagged_data_name])
+# data_name = 'noisy_sin'
+# lagged_data_name = 'noisy_sin_lag6'
+# data = df.filter(items=[data_name, lagged_data_name])
 
-y_train, y_test = temporal_train_test_split(data[data_name], test_size=365)
-y_train_lagged, y_test_lagged = temporal_train_test_split(data[lagged_data_name], test_size=365)
+# y_train, y_test = temporal_train_test_split(data[data_name], test_size=365)
+# y_train_lagged, y_test_lagged = temporal_train_test_split(data[lagged_data_name], test_size=365)
 
-s = LSTM_manager_2D.LSTMHandler()
+# s = LSTM_manager_2D.LSTMHandler()
 
-s.create_train_test_data(data = data, data_name = data_name, lagged_data_name=lagged_data_name, test_size=365)
+# s.create_train_test_data(data = data, data_name = data_name, lagged_data_name=lagged_data_name, test_size=365)
 
-s.create_trained_model(params=PARAMS)
+# s.create_trained_model(params=PARAMS)
 
-y_pred, y_pred_lag = s.make_predictions_from_model()
-# plot_series(y_train, y_train_lagged, y_test, y_test_lagged, y_pred, y_pred_lag , labels=["y_train","y_train_lagged", "y_test", "y_test_lagged", "y_pred", "y_pred_lag"])
+# y_pred, y_pred_lag = s.make_predictions_from_model()
+# # plot_series(y_train, y_train_lagged, y_test, y_test_lagged, y_pred, y_pred_lag , labels=["y_train","y_train_lagged", "y_test", "y_test_lagged", "y_pred", "y_pred_lag"])
 
-fig, ax = plot_series(y_train, y_train_lagged, y_test, y_test_lagged, y_pred, y_pred_lag , labels=["y_train", "y_train_lagged", "y_test", "y_test_lagged", "y_pred", "y_pred_lag"])
+# fig, ax = plot_series(y_train, y_train_lagged, y_test, y_test_lagged, y_pred, y_pred_lag , labels=["y_train", "y_train_lagged", "y_test", "y_test_lagged", "y_pred", "y_pred_lag"])
 
-neptune.log_image('2D_with_lagged_plot', fig)
+# neptune.log_image('2D_with_lagged_plot', fig)
 
-lossplot = s.plot_training_error()
-neptune.log_image('training_loss', lossplot)
+# lossplot = s.plot_training_error()
+# neptune.log_image('training_loss', lossplot)
 
-ax.get_legend().remove()
-log_chart(name='2D_with_lagged_plot', chart=fig)
+# ax.get_legend().remove()
+# log_chart(name='2D_with_lagged_plot', chart=fig)
 
-smape_normal = smape_loss(y_test, y_pred)
-neptune.log_metric('smape', smape_normal)
+# smape_normal = smape_loss(y_test, y_pred)
+# neptune.log_metric('smape', smape_normal)
 
-smape_lagged = smape_loss(y_test_lagged, y_pred_lag)
-neptune.log_metric('smape_of_lagged_series', smape_lagged)
+# smape_lagged = smape_loss(y_test_lagged, y_pred_lag)
+# neptune.log_metric('smape_of_lagged_series', smape_lagged)
 
-neptune.stop()
+# neptune.stop()
 # %%
 
 # plot_series(y_test, y_test_lagged, y_pred, y_pred_lag, y_pred_univariate, labels=["y_test", "y_test_lagged", "y_pred", "y_pred_lag", "y_pred_univariate"])

@@ -271,7 +271,7 @@ class LSTMHandler():
 
         study = optuna.create_study()
 
-        study.optimize(func, n_trials=3, callbacks=[neptune_callback])
+        study.optimize(func, n_trials=50, callbacks=[neptune_callback])
         opt_utils.log_study_info(study)
 
         print(study.best_params)

@@ -1,4 +1,3 @@
-# %%
 from sktime.forecasting.model_selection import (
     ForecastingGridSearchCV,
     SlidingWindowSplitter,
@@ -7,8 +6,7 @@ from sktime.forecasting.model_selection import (
 import numpy as np
 import pandas as pd
 from sktime.utils.plotting import plot_series
-from sktime.performance_metrics.forecasting import sMAPE, smape_loss
-
+from sktime.performance_metrics.forecasting import sMAPE, smape_loss, mape_loss
 
 from timeseries_pytorch_simpleLSTM import LSTM_manager
 
@@ -91,4 +89,3 @@ s.create_train_test_data(data = data, data_name = data_name, lagged_data_name=la
 s.optimize()
 
 neptune.stop()
-# %%
