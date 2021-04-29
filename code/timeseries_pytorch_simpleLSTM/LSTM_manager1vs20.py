@@ -92,8 +92,7 @@ class LSTMHandler():
         self.test_data_size = test_data_len
 
 
-
-        train_data = all_data[:-self.test_data_size]
+        train_data = all_data[:-(19+self.test_data_size)]
         test_data = all_data[-self.test_data_size:]
         # self.scaler = MinMaxScaler(feature_range=(-1, 1))
         self.scaler = StandardScaler()
@@ -122,9 +121,10 @@ class LSTMHandler():
         
         def create_inout_sequences(input_data, tw):
             inout_seq = []
-            for i in range(len(input_data)-tw):
+            # the train data is made here and with k is 20 instead of 1, thus the train label is 20 steps ahead of the train sequence. 
+            for i in range(len(input_data)-(tw)):
                 train_seq = input_data[i:i+tw]
-                train_label = input_data[i+tw:i+tw+1]
+                train_label = input_data[i+tw:i+tw+20]
                 inout_seq.append((train_seq, train_label))
             return inout_seq
 
@@ -199,15 +199,18 @@ class LSTMHandler():
         model.cuda()
         model.eval()
         print("model loaded")
+        for i in range(19):
+            test_inputs.append(np.NAN)
+
 
         for i in range(fut_pred):
-            seq = torch.cuda.FloatTensor(test_inputs[-self.train_window:])
+            seq = torch.cuda.FloatTensor(test_inputs[(-self.train_window-19):-19])
             with torch.no_grad():
                 model.hidden_cell = (torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda(), torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda())
                 modeloutput = model(seq).item()
                 test_inputs.append(modeloutput)
 
-        actual_predictions = self.scaler.inverse_transform(np.array(test_inputs[self.train_window:]).reshape(-1, 1))
+        actual_predictions = self.scaler.inverse_transform(np.array(test_inputs[-1]).reshape(-1, 1))
 
         train = self.data[:-self.test_data_size]
         valid = self.data[-self.test_data_size:]
