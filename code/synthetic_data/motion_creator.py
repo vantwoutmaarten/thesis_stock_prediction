@@ -203,7 +203,7 @@ def create_stock_price_scenario(mu, sigma, scenario_name):
 
 
 
-def create_sinus_plus_brownian_noise_scenario(missing_percentage, periodparameter, scenario_name, days = 2555, seasonal=False):
+def create_sinus_plus_brownian_noise_scenario(missing_percentage, periodparameter, scenario_name, days = 2555, seasonalperiodparam=None):
     """
     create a scenario of sinus + a brownian noise 
     Default is three years, 1460 days, this can be changed in the stockprice function.
@@ -214,7 +214,10 @@ def create_sinus_plus_brownian_noise_scenario(missing_percentage, periodparamete
     days = np.arange(total_days)
     sinus = np.sin(days/periodparameter)
     noisy_sin = sinus+1.2*noise
-
+    if(seasonalperiodparam):
+        seasonal_sin = sinus = np.sin(days/seasonalperiodparam)
+        noisy_sin = noisy_sin + seasonal_sin
+    
     # The sp_no_missing_values will take the allyear stockprice and remove the weekends + 7 days a year random holidays.
     sin_random_missing = copy.deepcopy(noisy_sin)
 
@@ -230,7 +233,11 @@ def create_sinus_plus_brownian_noise_scenario(missing_percentage, periodparamete
     plt.plot(sin_random_missing)
     plt.legend([scenario_name],
                loc='upper left')
-    plt.title("noisy sin with random 33% missing values")
+    if(seasonalperiodparam):
+        plt.title("noisy sin with random 33% missing values with seasonality")
+    else:
+        plt.title("noisy sin with every 3rd value missing")
+
     plt.show()
     
     sin_regular_missing = copy.deepcopy(noisy_sin)
@@ -244,9 +251,11 @@ def create_sinus_plus_brownian_noise_scenario(missing_percentage, periodparamete
     plt.plot(sin_regular_missing)
     plt.legend([scenario_name],
                loc='upper left')
-    plt.title("noisy sin with every 3rd value missing")
+    if(seasonalperiodparam):
+        plt.title("noisy sin with every 3rd value missing with seasonality")
+    else:
+        plt.title("noisy sin with every 3rd value missing")
     plt.show()
-    
             
     dict = {'noisy_sin': noisy_sin, 'noisy_sin_random_missing': sin_random_missing, 'noisy_sin_regular_missing': sin_regular_missing}
     df = pd.DataFrame(dict)
@@ -372,7 +381,7 @@ def create_2D_sinus_plus_brownian_similar(periodparameter, scenario_name):
 # create_sinus_plus_stochastic_noise_scenario(missing_percentage= 0.20,periodparameter = 10, scenario_name= 'stochastic015_sin_period63_missing20.csv')
 
 
-create_sinus_plus_brownian_noise_scenario(missing_percentage= 0.33,periodparameter = 20, seasonal=True, scenario_name= 'noisy_sin_period126_seasonalperiod630_year7_missing33_seed1.csv')
+create_sinus_plus_brownian_noise_scenario(missing_percentage= 0.33,periodparameter = 20, seasonalperiodparam=100, scenario_name= 'noisy_sin_period126_seasonalperiod628_year7_missing33_seed2.csv')
 
 # create_2D_sinus_plus_brownian_similar(periodparameter = 20, scenario_name= '2D_noisy_sin_period126_year7_lag30_seed5.csv')
 
