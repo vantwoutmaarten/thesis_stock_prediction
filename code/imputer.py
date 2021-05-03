@@ -24,7 +24,8 @@ def createGlobalMeanFilledColumn(df, col_name):
         # Calculate the running average
         if(day != 0):
             valueOfDay = globalmean_missing[day]
-            globalMean = ((globalMean*(day-1))+valueOfDay)/day
+            # when starting from index 1, ((globalMean*(day-1))+valueOfDay)/day
+            globalMean = ((globalMean*(day))+valueOfDay)/(day+1)
 
     df[new_col_name] = globalmean_missing
     df.to_csv(FILEPATH, index=False)
@@ -45,7 +46,7 @@ def createForwardFilledColumn(df, col_name):
     df.to_csv(FILEPATH, index=False)
 
 FILEPATH = "./synthetic_data/univariate_missingness/test.csv"
-df = pd.read_csv(FILEPATH)
+df = pd.read_csv(FILEPATH, index_col=0)
 # col_name = 'noisy_sin_random_missing'
 col_name = 'noisy_sin_regular_missing'
 
