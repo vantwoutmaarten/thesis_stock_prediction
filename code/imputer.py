@@ -1,7 +1,9 @@
 import numpy as np
 import pandas as pd
 
-def createImputedColumns(df, col_name, forwardfill = False, globalmean = False, windowof30mean= False):
+from sktime.forecasting.trend import PolynomialTrendForecaster
+
+def createImputedColumns(df, col_name, forwardfill = False, globalmean = False, windowof30mean = False, linear30fit = False, cubic30fit = False):
     if(forwardfill):
         createForwardFilledColumn(df, col_name)
     
@@ -11,7 +13,65 @@ def createImputedColumns(df, col_name, forwardfill = False, globalmean = False, 
     if(windowof30mean):
         createMeanOfLast30Column(df, col_name)
     
-    df.to_csv(FILEPATH)
+    if(linear30fit):
+        createLinear30FitColumn(df, col_name)
+    
+    if(cubic30fit):
+        createCubic30FitColumn(df, col_name)
+
+def createLinear30FitColumn(df, col_name):
+    new_col_name = col_name + '_linearfit30'
+    linearfit_missing = df[col_name].copy()
+
+    forecast = linearfit_missing[0]
+
+    for day in range(df['noisy_sin'].count()):
+        if(np.isnan(linearfit_missing[day])):
+            if(day != 0):
+                if(day < 30):
+                    fh = np.arange(1)+1
+                    forecaster = PolynomialTrendForecaster(degree=1)
+                    y_train = linearfit_missing[0:day]
+                    forecaster.fit(y_train)
+                    y_pred = forecaster.predict(fh)
+                    linearfit_missing[day] = y_pred
+                else:
+                    fh = np.arange(1)
+                    forecaster = PolynomialTrendForecaster(degree=1)
+                    y_train = linearfit_missing[day-30:day]
+                    forecaster.fit(y_train)
+                    y_pred = forecaster.predict(fh)
+                    linearfit_missing[day] = y_pred
+        
+    df[new_col_name] = linearfit_missing
+    df.to_csv(FILEPATH, index=False)
+
+def createCubic30FitColumn(df, col_name):
+    new_col_name = col_name + '_cubicfit30'
+    cubicfit_missing = df[col_name].copy()
+
+    forecast = cubicfit_missing[0]
+
+    for day in range(df['noisy_sin'].count()):
+        if(np.isnan(cubicfit_missing[day])):
+            if(day != 0):
+                if(day < 30):
+                    fh = np.arange(1)+1
+                    forecaster = PolynomialTrendForecaster(degree=3)
+                    y_train = cubicfit_missing[0:day]
+                    forecaster.fit(y_train)
+                    y_pred = forecaster.predict(fh)
+                    cubicfit_missing[day] = y_pred
+                else:
+                    fh = np.arange(1)
+                    forecaster = PolynomialTrendForecaster(degree=3)
+                    y_train = cubicfit_missing[day-30:day]
+                    forecaster.fit(y_train)
+                    y_pred = forecaster.predict(fh)
+                    cubicfit_missing[day] = y_pred
+        
+    df[new_col_name] = cubicfit_missing
+    df.to_csv(FILEPATH, index=False)
 
 def createMeanOfLast30Column(df, col_name):
     new_col_name = col_name + '_meanlast30'
@@ -59,7 +119,6 @@ def createGlobalMeanFilledColumn(df, col_name):
     df[new_col_name] = globalmean_missing
     df.to_csv(FILEPATH, index=False)
 
-
 def createForwardFilledColumn(df, col_name):
     new_col_name = col_name + '_forwardfill'
     forwardfill_missing = df[col_name].copy()
@@ -75,8 +134,9 @@ def createForwardFilledColumn(df, col_name):
     df.to_csv(FILEPATH, index=False)
 
 FILEPATH = "./synthetic_data/univariate_missingness/test.csv"
-df = pd.read_csv(FILEPATH, index_col=0)
+df = pd.read_csv(FILEPATH)
+# df = pd.read_csv(FILEPATH, index_col=0)
 # col_name = 'noisy_sin_random_missing'
-col_name = 'noisy_sin_regular_missing'
+col_name = 'noisy_sin_random_missing'
 
-createImputedColumns(df, col_name, globalmean=False, forwardfill=False, windowof30mean= True)
+createImputedColumns(df, col_name, forwardfill = True, globalmean = True, windowof30mean = True, linear30fit = True, cubic30fit = True)
