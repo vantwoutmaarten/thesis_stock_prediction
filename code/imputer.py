@@ -133,10 +133,10 @@ def createForwardFilledColumn(df, col_name):
     df[new_col_name] = forwardfill_missing
     df.to_csv(FILEPATH, index=False)
 
-FILEPATH = "./synthetic_data/univariate_missingness/test.csv"
+FILEPATH = "./synthetic_data/univariate_missingness/noisy_sin_period126_seasonalperiod628_year7_missing33_seed2.csv"
 df = pd.read_csv(FILEPATH)
 # df = pd.read_csv(FILEPATH, index_col=0)
 # col_name = 'noisy_sin_random_missing'
-col_name = 'noisy_sin_random_missing'
+col_name = 'noisy_sin_regular_missing'
 
 createImputedColumns(df, col_name, forwardfill = True, globalmean = True, windowof30mean = True, linear30fit = True, cubic30fit = True)

@@ -202,7 +202,6 @@ def create_stock_price_scenario(mu, sigma, scenario_name):
     return stockprice
 
 
-
 def create_sinus_plus_brownian_noise_scenario(missing_percentage, periodparameter, scenario_name, days = 2555, seasonalperiodparam=None):
     """
     create a scenario of sinus + a brownian noise 
@@ -345,7 +344,7 @@ def create_2D_sinus_plus_brownian_similar(periodparameter, scenario_name):
     frame = {'noisy_sin' : noisy_sin_series}
 
     df = pd.DataFrame(frame)
-    # Here I create the new column that is shifted by 4 values. 
+    # Here I create the new column that is shifted by 30 values. 
     df_lagged = df.copy()
 
     shifted = df.shift(30)
