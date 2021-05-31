@@ -70,7 +70,7 @@ PARAMS = {'epochs': 50,
 # Create experiment
 neptune.create_experiment('20-step ahead prediction_seed1_1ep_test', params = PARAMS, upload_source_files=['../timeseries_pytorch_simpleLSTM/LSTM_manager1vs20.py', '../timeseries_pytorch_simpleLSTM/LSTM_manager.py', '1aheadVS20ahead.py'], tags=['single_run', '1D-prediction', '7-year', '20-step-ahead'])
 
- ############################  Single 1-step ahead prediction ########################## 
+ ############################  Single 20-step ahead prediction ########################## 
 df = pd.read_csv("./synthetic_data/sin_brownian_for_optimization/1D_noisy_sin_period126_year7_seed1.csv")
 
 data_name = 'noisy_sin'
