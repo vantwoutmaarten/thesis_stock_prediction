@@ -9,11 +9,7 @@ import pandas as pd
 from sktime.utils.plotting import plot_series
 from sktime.performance_metrics.forecasting import sMAPE, smape_loss
 
-
-from timeseries_pytorch_simpleLSTM import LSTM_manager_2D
-from timeseries_pytorch_simpleLSTM import LSTM_manager
-from timeseries_pytorch_simpleLSTM import LSTM_manager1vs20
-from timeseries_pytorch_simpleLSTM import LSTM_manager_2D_20ahead
+import LSTM_manager_2D_20ahead
 
 import optuna
 
@@ -21,7 +17,7 @@ import neptune
 from neptunecontrib.api import log_chart
 import os
 
-neptune.init(project_qualified_name='mavantwout/sandbox',
+neptune.init(project_qualified_name='mavantwout/Stocks',
              api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiODBkNzdjMDUtYmYxZi00ODFjLWExN2MtNjk3Y2MwZDE5N2U2In0=',
              )
 
@@ -35,13 +31,15 @@ neptune.init(project_qualified_name='mavantwout/sandbox',
 #         'num_layers': 1}
 
 # # Create experiment
-# neptune.create_experiment('2D_20-step ahead prediction_seed1_1ep_test', params = PARAMS, upload_source_files=['../timeseries_pytorch_simpleLSTM/LSTM_manager_2D_20ahead.py', '2D_predictor_20ahead.py'], tags=['single_run', '2D-prediction', '4-year', '20-step-ahead'])
+# neptune.create_experiment('2D_20-step ahead prediction_seed1_1ep_test', params = PARAMS, upload_source_files=['./LSTM_manager_2D_20ahead.py', '2D_predictor_20ahead.py'], tags=['single_run', '2D-prediction', '4-year', '20-step-ahead'])
 
 #  ############################  Single 20-step ahead prediction 2-D ########################## 
-# df = pd.read_csv("./synthetic_data/sinus_scenarios/2D_noisy_sin_period126_year4_lag6_seed10.csv")
+# FILEPATH = os.getenv('arg1')	
+# df = pd.read_csv(FILEPATH)	
+# neptune.set_property('data', FILEPATH)
 
-# data_name = 'noisy_sin'
-# lagged_data_name = 'noisy_sin_lag6'
+# data_name = 'Close'
+# lagged_data_name = 'Close_ahead30'
 # data = df.filter(items=[data_name, lagged_data_name])
 
 # # The test size here is 20, this creates the split between what data is known and not known, like training and test.
@@ -75,19 +73,17 @@ neptune.init(project_qualified_name='mavantwout/sandbox',
 
 # neptune.stop()
 
-
-
 ############## OPTIMIZER ##################
 # Create experiment
-neptune.create_experiment('2D_20-step ahead prediction_seed1_optimization_test', upload_source_files=['./LSTM_manager_2D_20ahead.py', './2D_predictor_20ahead.py'], tags=['optimization', 'single_run', '2D-prediction', '4-year', '20-step-ahead'])
+neptune.create_experiment('2D_20-step ahead prediction_seed1_optimization', upload_source_files=['./LSTM_manager_2D_20ahead.py', './2D_predictor_20ahead.py'], tags=['real', 'optimization', 'single_run', '2D-prediction', '4-year', '20-step-ahead'])
 
  ############################  Single 20-step ahead prediction 2-D ########################## 
 FILEPATH = os.getenv('arg1')	
 df = pd.read_csv(FILEPATH)	
 neptune.set_property('data', FILEPATH)
 
-data_name = 'noisy_sin'
-lagged_data_name = 'noisy_sin_lag6'
+data_name = 'Close'
+lagged_data_name = 'Close_ahead30'
 data = df.filter(items=[data_name, lagged_data_name])
 
 # The test size here is 20, this creates the split between what data is known and not known, like training and test.

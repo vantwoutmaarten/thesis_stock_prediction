@@ -24,9 +24,9 @@ import os
 os.environ['CUBLAS_WORKSPACE_CONFIG']=':16:8'
 
 torch.set_deterministic(True)
-np.random.seed(0)
-torch.manual_seed(0)
-torch.cuda.manual_seed_all(0)
+np.random.seed(1)
+torch.manual_seed(1)
+torch.cuda.manual_seed_all(1)
 torch.backends.cudnn.deterministic = True
 
 # the detect anomaly is just for debugging, but sometimes it solves a problem of nvidia graphics drivers on windows.
@@ -261,7 +261,7 @@ class LSTMHandler():
 
         def func(trial):
             tw = trial.suggest_int('tw', 20, 600)
-            ep = trial.suggest_int('ep', 1, 2)
+            ep = trial.suggest_int('ep', 5, 50)
             lr = trial.suggest_uniform('lr', 0.00001, 0.01)
             hls = trial.suggest_int('hls', 1, 100)
             opt = trial.suggest_categorical("optimizer", ["Adam", "RMSprop", "SGD"]) 
@@ -289,5 +289,5 @@ class LSTMHandler():
 
         study = optuna.create_study()
 
-        study.optimize(func, n_trials=2, callbacks=[neptune_callback])
+        study.optimize(func, n_trials=85, callbacks=[neptune_callback])
         opt_utils.log_study_info(study)
