@@ -1,2 +1,2 @@
-import matplotlib
-print('matplotlib: {}'.format(matplotlib.__version__))
+import os
+os.getcwd()
