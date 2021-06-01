@@ -18,7 +18,7 @@ import neptune
 from neptunecontrib.api import log_chart
 import os
 
-neptune.init(project_qualified_name='mavantwout/cluster',
+neptune.init(project_qualified_name='mavantwout/1vsKaheadPrediction',
              api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiODBkNzdjMDUtYmYxZi00ODFjLWExN2MtNjk3Y2MwZDE5N2U2In0=',
              )
 
