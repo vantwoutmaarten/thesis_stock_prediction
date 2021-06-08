@@ -81,16 +81,22 @@ class LSTMHandler():
         test_data_len = test_size	
         self.test_data_size = test_data_len	
         train_data = all_data[:-(19+self.test_data_size)]	
-        test_data = all_data[-self.test_data_size:]	
+        test_data = all_data[-self.test_data_size:]
+        add_test_input = all_data[-(19+self.test_data_size):-self.test_data_size]
+        
         # self.scaler = MinMaxScaler(feature_range=(-1, 1))	
         self.scaler = StandardScaler()	
         print('train shape' , train_data.shape)	
-        print('test data shape' , test_data.shape)	
+        print('test data shape' , test_data.shape)
+        print('add test input shape' , add_test_input.shape)	
         # reshape is necessa4ry because each row should be a sample so convert (132) -> (132,1)	
         train_data_normalized = self.scaler.fit_transform(train_data)	
+        add_test_input_normalized = self.scaler.fit_transform(add_test_input)	
         # maybe data normalization shoudl only be applied to training data and not on test data	
         # Convert the data to a tensor	
-        self.train_data_normalized = torch.cuda.FloatTensor(train_data_normalized).view(-1,2)	
+        self.train_data_normalized = torch.cuda.FloatTensor(train_data_normalized).view(-1,2)
+        self.add_test_input_normalized = torch.cuda.FloatTensor(add_test_input_normalized).view(-1,2)
+
     def create_trained_model(self, params=None, modelpath=None):	
         # Set Device 	
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #assuming gpu is available	
@@ -156,8 +162,12 @@ class LSTMHandler():
         ####### making predictions #############	
         fut_pred = self.test_data_size	
         test_inputs = self.train_data_normalized[-self.train_window:].tolist()	
-        for i in range(19):		
-            test_inputs.append([np.NAN, np.NAN])	
+        # for i in range(19):		
+        #     test_inputs.append([np.NAN, np.NAN])	
+
+        add_test_input = self.add_test_input_normalized.tolist()
+
+        test_inputs = test_inputs + add_test_input
 
         model = LSTM(hidden_layer_size=self.hidden_layer_size, num_layers = self.num_layers).to(device)	
         if(modelpath != None):	
@@ -177,7 +187,7 @@ class LSTMHandler():
                 # test_inputs = torch.cat((test_inputs, modeloutput), 0)	
                 	
                 test_inputs.append([modeloutput, np.NAN])	
-        actual_predictions = self.scaler.inverse_transform(np.array(test_inputs[-1:]).reshape(-1, 2))	
+        actual_predictions = self.scaler.inverse_transform(np.array(test_inputs[-self.test_data_size:]).reshape(-1, 2))	
         	
         train = self.data[:-self.test_data_size]		
         valid = self.data[-self.test_data_size:]		

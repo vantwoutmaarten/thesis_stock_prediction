@@ -21,11 +21,13 @@ def createImputedColumns(df, col_name, forwardfill = False, globalmean = False, 
 
 def createLinear30FitColumn(df, col_name):
     new_col_name = col_name + '_linearfit30'
+    # new_col_name = col_name + '_imputed'
+    
     linearfit_missing = df[col_name].copy()
 
     forecast = linearfit_missing[0]
 
-    for day in range(df['noisy_sin'].count()):
+    for day in range(df['Close_ahead30'].count()):
         if(np.isnan(linearfit_missing[day])):
             if(day != 0):
                 if(day < 30):
@@ -48,11 +50,13 @@ def createLinear30FitColumn(df, col_name):
 
 def createCubic30FitColumn(df, col_name):
     new_col_name = col_name + '_cubicfit30'
+    # new_col_name = col_name + '_imputed'
+
     cubicfit_missing = df[col_name].copy()
 
     forecast = cubicfit_missing[0]
 
-    for day in range(df['noisy_sin'].count()):
+    for day in range(df['Close_ahead30'].count()):
         if(np.isnan(cubicfit_missing[day])):
             if(day != 0):
                 if(day < 30):
@@ -75,11 +79,13 @@ def createCubic30FitColumn(df, col_name):
 
 def createMeanOfLast30Column(df, col_name):
     new_col_name = col_name + '_meanlast30'
+    # new_col_name = col_name + '_imputed'
+
     windowmean_missing = df[col_name].copy()
 
     windowMean = windowmean_missing[0]
 
-    for day in range(df['noisy_sin'].count()):
+    for day in range(df['Close_ahead30'].count()):
 
         if(np.isnan(windowmean_missing[day])):
             windowmean_missing[day] = windowMean
@@ -101,11 +107,13 @@ def createMeanOfLast30Column(df, col_name):
 
 def createGlobalMeanFilledColumn(df, col_name):
     new_col_name = col_name + '_globalmean'
+    # new_col_name = col_name + '_imputed'
+
     globalmean_missing = df[col_name].copy()
 
     globalMean = globalmean_missing[0]
     
-    for day in range(df['noisy_sin'].count()):
+    for day in range(df['Close_ahead30'].count()):
 
         if(np.isnan(globalmean_missing[day])):
             globalmean_missing[day] = globalMean
@@ -121,11 +129,13 @@ def createGlobalMeanFilledColumn(df, col_name):
 
 def createForwardFilledColumn(df, col_name):
     new_col_name = col_name + '_forwardfill'
+    # new_col_name = col_name + '_imputed'
+
     forwardfill_missing = df[col_name].copy()
 
     # This method does forward filling, at the moment it is only compatible with series with a value at index 0
-    print(df['noisy_sin'].count())
-    for day in range(df['noisy_sin'].count()):
+    print(df['Close_ahead30'].count())
+    for day in range(df['Close_ahead30'].count()):
         if(np.isnan(forwardfill_missing[day])):
             forwardfill_missing[day] = forwardfill_missing[day-1]
             print(forwardfill_missing[day])
@@ -133,10 +143,11 @@ def createForwardFilledColumn(df, col_name):
     df[new_col_name] = forwardfill_missing
     df.to_csv(FILEPATH, index=False)
 
-FILEPATH = "./synthetic_data/univariate_missingness/noisy_sin_period126_seasonalperiod628_year7_missing33_seed2.csv"
+# FILEPATH = "./synthetic_data/univariate_missingness/noisy_sin_period126_seasonalperiod628_year7_missing33_seed2.csv"
+FILEPATH = "./data_price/data/CocaCola/missing33/KO_Shifted_30ahead.csv"
 df = pd.read_csv(FILEPATH)
 # df = pd.read_csv(FILEPATH, index_col=0)
 # col_name = 'noisy_sin_random_missing'
-col_name = 'noisy_sin_regular_missing'
+col_name = 'Close_ahead30_missing30'
 
 createImputedColumns(df, col_name, forwardfill = True, globalmean = True, windowof30mean = True, linear30fit = True, cubic30fit = True)
