@@ -1,4 +1,4 @@
-Date,Close,Close_ahead30,Close_ahead30_missing90,Close_ahead30_missing90_globalmean
+Date,Close,Close_ahead30,Close_ahead30_missing90,Close_ahead30_missing90_imputed
 03/01/2017,29.03750038,33.87749863,33.87749863,33.87749863
 04/01/2017,29.00499916,33.83750153,,33.87749863
 05/01/2017,29.15250015,33.93000031,,33.87749863

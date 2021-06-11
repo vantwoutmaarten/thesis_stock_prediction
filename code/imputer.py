@@ -144,7 +144,7 @@ def createForwardFilledColumn(df, col_name):
     df.to_csv(FILEPATH, index=False)
 
 # FILEPATH = "./synthetic_data/univariate_missingness/noisy_sin_period126_seasonalperiod628_year7_missing33_seed2.csv"
-FILEPATH = "./data_price/data/CocaCola/missing33/KO_Shifted_30ahead.csv"
+FILEPATH = "./data_price/data/Apple/missing33/AAPL_Shifted_30ahead.csv"
 df = pd.read_csv(FILEPATH)
 # df = pd.read_csv(FILEPATH, index_col=0)
 # col_name = 'noisy_sin_random_missing'
