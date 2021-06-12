@@ -13,8 +13,8 @@ from sktime.performance_metrics.forecasting import sMAPE, smape_loss
 
 import LSTM_manager_2D_20ahead_20pred
 
+
 import optuna
-import os
 
 import neptune
 from neptunecontrib.api import log_chart
@@ -23,17 +23,17 @@ neptune.init(project_qualified_name='mavantwout/Stocks',
              api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiODBkNzdjMDUtYmYxZi00ODFjLWExN2MtNjk3Y2MwZDE5N2U2In0=',
              )
 
-# PARAMS = {'epochs': 30,
+# PARAMS = {'epochs': 12,
 #         'lr': 0.0005,
-#         'hls' : 86,
-#         'train_window': 247, 
+#         'hls' : 7,
+#         'train_window': 250, 
 #         'opt' : 'RMSprop',
 #         'loss' : 'MSELoss',
 #         'dropout': 0.0,
 #         'num_layers': 1}
 
 # # Create experiment
-# neptune.create_experiment('2D_20-step ahead prediction_seed1_1ep_test', params = PARAMS, upload_source_files=['./LSTM_manager_2D_20ahead_20pred.py', '2D_predictor_20ahead_20pred.py'], tags=['single_run', '2D-prediction', '4-year', '20-step-ahead', '20-predictions'])
+# neptune.create_experiment('2D_20-step ahead prediction_test', params = PARAMS, upload_source_files=['../timeseries_pytorch_simpleLSTM/LSTM_manager_2D_20ahead.py', '2D_predictor_20ahead.py'], tags=['single_run', '2D-prediction', '4-year', '20-step-ahead', 'shifted30'])
 
 #  ############################  Single 20-step ahead prediction 2-D ########################## 
 # FILEPATH = os.getenv('arg1')	
@@ -80,9 +80,9 @@ neptune.init(project_qualified_name='mavantwout/Stocks',
 
 
 
-############## OPTIMIZER ##################
+############# OPTIMIZER ##################
 # Create experiment
-neptune.create_experiment('2D_20-step ahead prediction_seed1_optimization_test', upload_source_files=['./LSTM_manager_2D_20ahead_20pred.py', '2D_predictor_20ahead_20pred.py'], tags=['optimization', 'single_run', '2D-prediction', '4-year', '20-step-ahead', '20-predictions'])
+neptune.create_experiment('2D_20-step ahead prediction_seed1_optimization_test', upload_source_files=['../timeseries_pytorch_simpleLSTM/LSTM_manager_2D_20ahead.py', '2D_predictor_20ahead.py'], tags=['optimization', 'single_run', '2D-prediction', '4-year', '20-step-ahead', '30shifted'])
 
  ############################  Single 20-step ahead prediction 2-D ########################## 
 FILEPATH = os.getenv('arg1')	
@@ -105,3 +105,4 @@ s.create_train_test_data(data = data, data_name = data_name, lagged_data_name=la
 s.optimize()
 
 neptune.stop()
+

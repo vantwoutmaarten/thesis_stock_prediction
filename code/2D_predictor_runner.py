@@ -36,7 +36,7 @@ neptune.create_experiment('paramstest_1D', params = PARAMS, upload_source_files=
 
 #%%
  ############################  Single predictor  ########################## 
-df = pd.read_csv("./synthetic_data/sinus_scenarios/2D_noisy_sin_period126_year4_lag6_seed10.csv")
+df = pd.read_csv("./synthetic_data/sinus_scenarios/2D_noisy_sin_period126_year4_ahead6_seed10.csv")
 
 data_name = 'noisy_sin'
 data = df.filter([data_name])

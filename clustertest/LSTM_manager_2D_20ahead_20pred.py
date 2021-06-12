@@ -80,12 +80,13 @@ class LSTMHandler():
         # Get number of rows for test by number	
         test_data_len = test_size	
         self.test_data_size = test_data_len	
-        train_data = all_data[:-(19+self.test_data_size)]	
+        train_data = all_data[:-(self.test_data_size)]	
         test_data = all_data[-self.test_data_size:]
         add_test_input = all_data[-(19+self.test_data_size):-self.test_data_size]
         
-        # self.scaler = MinMaxScaler(feature_range=(-1, 1))	
-        self.scaler = StandardScaler()	
+        self.scaler = MinMaxScaler(feature_range=(-1, 1))
+        
+        # self.scaler = StandardScaler()	
         print('train shape' , train_data.shape)	
         print('test data shape' , test_data.shape)
         print('add test input shape' , add_test_input.shape)	
@@ -108,9 +109,9 @@ class LSTMHandler():
         	
         def create_inout_sequences(input_data, tw):	
             inout_seq = []	
-            for i in range(len(input_data)-tw):	
+            for i in range(len(input_data)-tw-19):	
                 train_seq = input_data[i:i+tw]	
-                train_label = input_data[i+tw:i+tw+20]	
+                train_label = input_data[i+tw+19:i+tw+20]	
                 inout_seq.append((train_seq, train_label))	
             return inout_seq	
         	
@@ -124,6 +125,7 @@ class LSTMHandler():
         print(epochs)	
         self.hist = np.zeros(epochs)	
         start_time = time.time()	
+
         for i in range(epochs):	
             for seq, labels in train_inout_seq:	
                 optimizer.zero_grad()	
@@ -133,7 +135,7 @@ class LSTMHandler():
                 # y_pred = y_pred.view(1,2)	
                 single_loss = loss_function(y_pred, labels[0])	
                 # WHEN SHOULD THE LOSS BE AGGREGATED WITH mean()	
-                # single_loss.backward(retain_graph=True)	
+                # single_loss.backward(retain_graph=True)
                 single_loss.backward()	
                 optimizer.step()	
                 	
@@ -161,13 +163,13 @@ class LSTMHandler():
         	
         ####### making predictions #############	
         fut_pred = self.test_data_size	
-        test_inputs = self.train_data_normalized[-self.train_window:].tolist()	
+        test_inputs = self.train_data_normalized[-(self.train_window+19):].tolist()	
         # for i in range(19):		
         #     test_inputs.append([np.NAN, np.NAN])	
 
-        add_test_input = self.add_test_input_normalized.tolist()
+        # add_test_input = self.add_test_input_normalized.tolist()
 
-        test_inputs = test_inputs + add_test_input
+        # test_inputs = test_inputs + add_test_input
 
         model = LSTM(hidden_layer_size=self.hidden_layer_size, num_layers = self.num_layers).to(device)	
         if(modelpath != None):	

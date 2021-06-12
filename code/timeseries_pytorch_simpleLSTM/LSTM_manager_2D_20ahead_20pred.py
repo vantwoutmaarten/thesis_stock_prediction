@@ -80,22 +80,23 @@ class LSTMHandler():
         # Get number of rows for test by number	
         test_data_len = test_size	
         self.test_data_size = test_data_len	
-        train_data = all_data[:-(19+self.test_data_size)]	
+        train_data = all_data[:-(self.test_data_size)]	
         test_data = all_data[-self.test_data_size:]
-        add_test_input = all_data[-(19+self.test_data_size):-self.test_data_size]
+        # add_test_input = all_data[-(19+self.test_data_size):-self.test_data_size]
         
-        # self.scaler = MinMaxScaler(feature_range=(-1, 1))	
-        self.scaler = StandardScaler()	
+        self.scaler = MinMaxScaler(feature_range=(-1, 1))
+        
+        # self.scaler = StandardScaler()	
         print('train shape' , train_data.shape)	
         print('test data shape' , test_data.shape)
-        print('add test input shape' , add_test_input.shape)	
+        # print('add test input shape' , add_test_input.shape)	
         # reshape is necessa4ry because each row should be a sample so convert (132) -> (132,1)	
         train_data_normalized = self.scaler.fit_transform(train_data)	
-        add_test_input_normalized = self.scaler.fit_transform(add_test_input)	
+        # add_test_input_normalized = self.scaler.fit_transform(add_test_input)	
         # maybe data normalization shoudl only be applied to training data and not on test data	
         # Convert the data to a tensor	
         self.train_data_normalized = torch.cuda.FloatTensor(train_data_normalized).view(-1,2)
-        self.add_test_input_normalized = torch.cuda.FloatTensor(add_test_input_normalized).view(-1,2)
+        # self.add_test_input_normalized = torch.cuda.FloatTensor(add_test_input_normalized).view(-1,2)
 
     def create_trained_model(self, params=None, modelpath=None):	
         # Set Device 	
@@ -108,9 +109,9 @@ class LSTMHandler():
         	
         def create_inout_sequences(input_data, tw):	
             inout_seq = []	
-            for i in range(len(input_data)-tw):	
+            for i in range(len(input_data)-tw-19):	
                 train_seq = input_data[i:i+tw]	
-                train_label = input_data[i+tw:i+tw+20]	
+                train_label = input_data[i+tw+19:i+tw+20]	
                 inout_seq.append((train_seq, train_label))	
             return inout_seq	
         	
@@ -124,6 +125,7 @@ class LSTMHandler():
         print(epochs)	
         self.hist = np.zeros(epochs)	
         start_time = time.time()	
+
         for i in range(epochs):	
             for seq, labels in train_inout_seq:	
                 optimizer.zero_grad()	
@@ -133,7 +135,7 @@ class LSTMHandler():
                 # y_pred = y_pred.view(1,2)	
                 single_loss = loss_function(y_pred, labels[0])	
                 # WHEN SHOULD THE LOSS BE AGGREGATED WITH mean()	
-                # single_loss.backward(retain_graph=True)	
+                # single_loss.backward(retain_graph=True)
                 single_loss.backward()	
                 optimizer.step()	
                 	
@@ -161,13 +163,13 @@ class LSTMHandler():
         	
         ####### making predictions #############	
         fut_pred = self.test_data_size	
-        test_inputs = self.train_data_normalized[-self.train_window:].tolist()	
+        test_inputs = self.train_data_normalized[-(self.train_window+19):].tolist()	
         # for i in range(19):		
         #     test_inputs.append([np.NAN, np.NAN])	
 
-        add_test_input = self.add_test_input_normalized.tolist()
+        # add_test_input = self.add_test_input_normalized.tolist()
 
-        test_inputs = test_inputs + add_test_input
+        # test_inputs = test_inputs + add_test_input
 
         model = LSTM(hidden_layer_size=self.hidden_layer_size, num_layers = self.num_layers).to(device)	
         if(modelpath != None):	
@@ -183,7 +185,7 @@ class LSTMHandler():
             seq = torch.cuda.FloatTensor(test_inputs[(-self.train_window-19):-19])	
             with torch.no_grad():	
                 model.hidden_cell = (torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda(), torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda())	
-                modeloutput = model(seq).item()	
+                modeloutput = model(seq).item()
                 # test_inputs = torch.cat((test_inputs, modeloutput), 0)	
                 	
                 test_inputs.append([modeloutput, np.NAN])	
