@@ -18,9 +18,9 @@ import neptunecontrib.monitoring.optuna as opt_utils
 import os	
 os.environ['CUBLAS_WORKSPACE_CONFIG']=':16:8'	
 torch.set_deterministic(True)	
-np.random.seed(1)	
-torch.manual_seed(1)	
-torch.cuda.manual_seed_all(1)	
+np.random.seed(50)	
+torch.manual_seed(50)	
+torch.cuda.manual_seed_all(50)	
 torch.backends.cudnn.deterministic = True	
 # the detect anomaly is just for debugging, but sometimes it solves a problem of nvidia graphics drivers on windows.	
 torch.autograd.set_detect_anomaly(True)	
@@ -133,7 +133,8 @@ class LSTMHandler():
                                     torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda())	
                 y_pred = model(seq)	
                 # y_pred = y_pred.view(1,2)	
-                single_loss = loss_function(y_pred, labels[0])	
+                label = labels[0,0]
+                single_loss = loss_function(y_pred, label)	
                 # WHEN SHOULD THE LOSS BE AGGREGATED WITH mean()	
                 # single_loss.backward(retain_graph=True)
                 single_loss.backward()	

@@ -26,10 +26,10 @@ neptune.init(project_qualified_name='mavantwout/Stocks',
              api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiODBkNzdjMDUtYmYxZi00ODFjLWExN2MtNjk3Y2MwZDE5N2U2In0=',
              )
 
-PARAMS = {'epochs': 25,
-        'lr': 0.00008,
-        'hls' : 30,
-        'train_window': 40, 
+PARAMS = {'epochs': 80,
+        'lr':  0.0029177560092619997,
+        'hls' : 28,
+        'train_window': 20, 
         'opt' : 'RMSprop',
         'loss' : 'MSELoss',
         'dropout': 0.0,
@@ -42,7 +42,7 @@ neptune.create_experiment('2D_20-step ahead prediction_test', params = PARAMS, u
 # df = pd.read_csv("./synthetic_data/sinus_scenarios/2D_noisy_sin_period126_year4_ahead6_seed10.csv")
 
 
-df = pd.read_csv("./data_price/data/CocaCola/KO_Shifted_30ahead.csv")
+df = pd.read_csv("./data_price/data/Microsoft/MSFT_Shifted_30ahead.csv")
 
 data_name = 'Close'
 lagged_data_name = 'Close_ahead30'
