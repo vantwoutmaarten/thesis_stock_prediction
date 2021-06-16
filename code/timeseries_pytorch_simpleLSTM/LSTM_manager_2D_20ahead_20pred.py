@@ -49,7 +49,9 @@ class LSTM(nn.Module):
         predictions = self.linear(lstm_out.view(len(input_seq), -1))	
         # predictions = self.linear(lstm_out)	
         # return predictions[-1]	
-        return predictions[-1,:]	
+        return predictions[-1,:]
+
+    	
 class LSTMHandler():	
     """	
     A class that can train/save a model and make predictions.	
@@ -62,41 +64,60 @@ class LSTMHandler():
         self.data_name = None	
         self.lagged_data_name = None	
         self.train_data_normalized = None	
+        self.lasttrainlabel = None
         # use a train windows that is domain dependent here 365 since it is daily data per year	
         self.train_window = None	
         self.test_data_size = None	
         self.scaler = None	
         self.device = None	
         self.hist = None	
-        self.stateDict = None	
+        self.stateDict = None
+
     def create_train_test_data(self, data = None, data_name = None, lagged_data_name=None, test_size=365):	
         # Create a new dataframe with only the 'Close column'	
         self.data = data	
         self.data_name = data_name	
         self.lagged_data_name = lagged_data_name	
-        all_data = self.data	
+        all_data = self.data
+
+
         # Get the number of rows for test by percentage	
         # test_data_len = math.ceil(len(all_data)*test_percentage)	
         # Get number of rows for test by number	
         test_data_len = test_size	
         self.test_data_size = test_data_len	
+
+        self.lasttrainlabel = all_data[(-self.test_data_size-1):(-self.test_data_size)].iloc[0,0]
+
+        # create a differenced series
+        def difference1lag(dataset):
+            diff = list()
+            for i in range(1, len(dataset)):
+                value = dataset[i] - dataset[i - 1]
+                diff.append(value)
+            return pd.Series(diff)	
+        
+        all_data.iloc[:, 0] = difference1lag(all_data.iloc[:, 0])
+        all_data.iloc[:, 1] = difference1lag(all_data.iloc[:, 1])
+
+    
         train_data = all_data[:-(self.test_data_size)]	
         test_data = all_data[-self.test_data_size:]
-        # add_test_input = all_data[-(19+self.test_data_size):-self.test_data_size]
-        
+
+
         self.scaler = MinMaxScaler(feature_range=(-1, 1))
-        
-        # self.scaler = StandardScaler()	
+        # self.scaler = StandardScaler()
+        # 	
         print('train shape' , train_data.shape)	
         print('test data shape' , test_data.shape)
         # print('add test input shape' , add_test_input.shape)	
         # reshape is necessa4ry because each row should be a sample so convert (132) -> (132,1)	
+        
         train_data_normalized = self.scaler.fit_transform(train_data)	
-        # add_test_input_normalized = self.scaler.fit_transform(add_test_input)	
         # maybe data normalization shoudl only be applied to training data and not on test data	
         # Convert the data to a tensor	
         self.train_data_normalized = torch.cuda.FloatTensor(train_data_normalized).view(-1,2)
-        # self.add_test_input_normalized = torch.cuda.FloatTensor(add_test_input_normalized).view(-1,2)
+
 
     def create_trained_model(self, params=None, modelpath=None):	
         # Set Device 	
@@ -165,12 +186,7 @@ class LSTMHandler():
         ####### making predictions #############	
         fut_pred = self.test_data_size	
         test_inputs = self.train_data_normalized[-(self.train_window+19):].tolist()	
-        # for i in range(19):		
-        #     test_inputs.append([np.NAN, np.NAN])	
 
-        # add_test_input = self.add_test_input_normalized.tolist()
-
-        # test_inputs = test_inputs + add_test_input
 
         model = LSTM(hidden_layer_size=self.hidden_layer_size, num_layers = self.num_layers).to(device)	
         if(modelpath != None):	
@@ -191,7 +207,17 @@ class LSTMHandler():
                 	
                 test_inputs.append([modeloutput, np.NAN])	
         actual_predictions = self.scaler.inverse_transform(np.array(test_inputs[-self.test_data_size:]).reshape(-1, 2))	
-        	
+
+        def invert_difference(dataset, lasttrainlabel):
+            diff = list()
+            value = lasttrainlabel
+            for i in range(0, len(dataset)):
+                value = value + dataset[i]
+                diff.append(value)
+            return pd.Series(diff)
+
+        actual_predictions.iloc[:, 0] = invert_difference(actual_predictions.iloc[:, 0], self.lasttrainlabel)
+                    
         train = self.data[:-self.test_data_size]		
         valid = self.data[-self.test_data_size:]		
         valid['Predictions'] = actual_predictions[:,0]	

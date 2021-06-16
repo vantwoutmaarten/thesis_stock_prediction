@@ -36,17 +36,18 @@ PARAMS = {'epochs': 80,
         'num_layers': 1}
 
 # Create experiment
-neptune.create_experiment('2D_20-step ahead prediction_test', params = PARAMS, upload_source_files=['../timeseries_pytorch_simpleLSTM/LSTM_manager_2D_20ahead.py', '2D_predictor_20ahead.py'], tags=['single_run', '2D-prediction', '4-year', '20-step-ahead', 'shifted6', 'smallwindow', 'hidden7'])
+neptune.create_experiment('2D_20-step ahead predict_returns', params = PARAMS, upload_source_files=['../timeseries_pytorch_simpleLSTM/LSTM_manager_2D_20ahead.py', '2D_predictor_20ahead.py'], tags=['single_run', '2D-prediction', '4-year', '20-step-ahead', 'shifted30', 'minmax-11','returns'])
 
  ############################  Single 20-step ahead prediction 2-D ########################## 
 # df = pd.read_csv("./synthetic_data/sinus_scenarios/2D_noisy_sin_period126_year4_ahead6_seed10.csv")
 
 
-df = pd.read_csv("./data_price/data/Microsoft/MSFT_Shifted_30ahead.csv")
+df = pd.read_csv("./data_price/data/Apple/AAPL_Shifted_30ahead.csv")
 
 data_name = 'Close'
 lagged_data_name = 'Close_ahead30'
 data = df.filter(items=[data_name, lagged_data_name])
+
 
 test_size = 20
 # The test size here is 20, this creates the split between what data is known and not known, like training and test.
@@ -69,7 +70,7 @@ smape = smape_loss(y_test_to_predict, y_pred)
 neptune.log_metric('smape', smape)
 
 y_train = y_train
-
+#change this.
 fig, ax = plot_series(y_train, y_train_lagged, y_test, y_test_lagged, y_pred, labels=["y_train", "y_train_lagged", "y_test", "y_test_lagged", "y_pred"])
 
 neptune.log_image('univariate_plot', fig)
