@@ -13,14 +13,19 @@ from sktime.performance_metrics.forecasting import sMAPE, smape_loss, mape_loss
 from sktime.forecasting.model_selection import temporal_train_test_split	
 import optuna	
 import neptune	
-import neptunecontrib.monitoring.optuna as opt_utils	
+import neptunecontrib.monitoring.optuna as opt_utils
+
+
+import shap
+
+
 ###### making reproducable #######	
 import os	
 os.environ['CUBLAS_WORKSPACE_CONFIG']=':16:8'	
 torch.set_deterministic(True)	
-np.random.seed(50)	
-torch.manual_seed(50)	
-torch.cuda.manual_seed_all(50)	
+np.random.seed(17)	
+torch.manual_seed(17)	
+torch.cuda.manual_seed_all(17)	
 torch.backends.cudnn.deterministic = True	
 # the detect anomaly is just for debugging, but sometimes it solves a problem of nvidia graphics drivers on windows.	
 torch.autograd.set_detect_anomaly(True)	
@@ -66,7 +71,8 @@ class LSTMHandler():
         self.train_data_normalized = None	
         self.lasttrainlabel = None
         # use a train windows that is domain dependent here 365 since it is daily data per year	
-        self.train_window = None	
+        self.train_window = None
+        self.train_inout_seq = None
         self.test_data_size = None	
         self.scaler = None	
         self.device = None	
@@ -89,7 +95,7 @@ class LSTMHandler():
 
         self.lasttrainlabel = all_data[(-self.test_data_size-1):(-self.test_data_size)].iloc[0,0]
 
-        # create a differenced series
+        # # create a differenced series
         def difference1lag(dataset):
             diff = list()
             for i in range(1, len(dataset)):
@@ -128,15 +134,7 @@ class LSTMHandler():
         self.train_window = params['train_window']	
         self.num_layers = params['num_layers']	
         	
-        def create_inout_sequences(input_data, tw):	
-            inout_seq = []	
-            for i in range(len(input_data)-tw-19):	
-                train_seq = input_data[i:i+tw]	
-                train_label = input_data[i+tw+19:i+tw+20]	
-                inout_seq.append((train_seq, train_label))	
-            return inout_seq	
-        	
-        train_inout_seq = create_inout_sequences(self.train_data_normalized, self.train_window)	
+        self.train_inout_seq = self._create_inout_sequences(self.train_data_normalized, self.train_window)	
         model = LSTM(hidden_layer_size=self.hidden_layer_size, num_layers = self.num_layers, dropout = params['dropout']).to(device)	
         loss_function = getattr(nn, params['loss'])()	
         optimizer = getattr(torch.optim, params['opt'])(model.parameters(), lr=params['lr'])	
@@ -148,7 +146,7 @@ class LSTMHandler():
         start_time = time.time()	
 
         for i in range(epochs):	
-            for seq, labels in train_inout_seq:	
+            for seq, labels in self.train_inout_seq:	
                 optimizer.zero_grad()	
                 model.hidden_cell = (torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda(),	
                                     torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda())	
@@ -186,7 +184,7 @@ class LSTMHandler():
         ####### making predictions #############	
         fut_pred = self.test_data_size	
         test_inputs = self.train_data_normalized[-(self.train_window+19):].tolist()	
-
+        self.test_inout_seq = self._create_inout_sequences(test_inputs, self.train_window)
 
         model = LSTM(hidden_layer_size=self.hidden_layer_size, num_layers = self.num_layers).to(device)	
         if(modelpath != None):	
@@ -216,7 +214,7 @@ class LSTMHandler():
                 diff.append(value)
             return pd.Series(diff)
 
-        actual_predictions.iloc[:, 0] = invert_difference(actual_predictions.iloc[:, 0], self.lasttrainlabel)
+        actual_predictions[:,0] = invert_difference(actual_predictions[:,0], self.lasttrainlabel)
                     
         train = self.data[:-self.test_data_size]		
         valid = self.data[-self.test_data_size:]		
@@ -238,6 +236,9 @@ class LSTMHandler():
         y_pred.index = list(y_pred.index)		
         print("predictions made")		
         return y_pred	
+    
+    
+    
     def plot_training_error(self):	
         fig = plt.figure(figsize=(16,8))	
         plt.title('Training Loss', fontsize=25)	
@@ -277,3 +278,41 @@ class LSTMHandler():
         study = optuna.create_study()	
         study.optimize(func, n_trials=2, callbacks=[neptune_callback])	
         opt_utils.log_study_info(study)
+
+    def explain_simple_prediction(self, modelpath=None, modelstate=None):
+
+        # The SHAP deepexplainer needs a model and a background. Here the trained model is loaded.
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #assuming gpu is available	
+        model = LSTM(hidden_layer_size=self.hidden_layer_size, num_layers = self.num_layers).to(device)	
+        if(modelpath != None):	
+            model.load_state_dict(torch.load(modelpath))	
+        elif(modelstate != None):	
+            model.load_state_dict(modelstate)	
+        else:	
+            model.load_state_dict(self.stateDict)	
+
+        # The SHAP deepexplainer needs a model and a background. Here the background is created and 15 samples from the trainset are selected to calculate the expected value.
+        training_windows = [trainingwindow[0] for trainingwindow in self.train_inout_seq]
+        background = training_windows[np.random.choice(training_windows.shape[0], 5, replace=False)]
+        # Here the deepexplainer is made using the trained model and the samples to come up with averages.
+        e = shap.DeepExplainer(model, background)
+
+        # To evaluate a prediction with the explainer test inputs should be specified. 
+        evaluation_windows = [evaluation_window[0] for evaluation_window in self.test_inout_seq]
+
+        # now the prediction(s) to explain is specified. 
+        prediction_to_explain = evaluation_windows.iloc[0,:]
+
+        shap_values = e.shap_values(prediction_to_explain)
+        
+        shap.force_plot(e.expected_value, shap_values, prediction_to_explain)
+
+        return
+
+    def _create_inout_sequences(input_data, tw):	
+        inout_seq = []	
+        for i in range(len(input_data)-tw-19):	
+            train_seq = input_data[i:i+tw]	
+            train_label = input_data[i+tw+19:i+tw+20]	
+            inout_seq.append((train_seq, train_label))	
+        return inout_seq	

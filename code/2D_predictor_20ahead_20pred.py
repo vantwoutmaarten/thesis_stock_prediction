@@ -26,8 +26,8 @@ neptune.init(project_qualified_name='mavantwout/Stocks',
              api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiODBkNzdjMDUtYmYxZi00ODFjLWExN2MtNjk3Y2MwZDE5N2U2In0=',
              )
 
-PARAMS = {'epochs': 80,
-        'lr':  0.0029177560092619997,
+PARAMS = {'epochs': 60,
+        'lr':  0.000029177560092619997,
         'hls' : 28,
         'train_window': 20, 
         'opt' : 'RMSprop',
@@ -36,13 +36,13 @@ PARAMS = {'epochs': 80,
         'num_layers': 1}
 
 # Create experiment
-neptune.create_experiment('2D_20-step ahead predict_returns', params = PARAMS, upload_source_files=['../timeseries_pytorch_simpleLSTM/LSTM_manager_2D_20ahead.py', '2D_predictor_20ahead.py'], tags=['single_run', '2D-prediction', '4-year', '20-step-ahead', 'shifted30', 'minmax-11','returns'])
+neptune.create_experiment('2D_20-step ahead predict_returns', params = PARAMS, upload_source_files=['../timeseries_pytorch_simpleLSTM/LSTM_manager_2D_20ahead.py', '2D_predictor_20ahead.py'], tags=['single_run', '2D-prediction', '4-year', '20-step-ahead', 'shifted30', 'minmax-11','returns','seed4'])
 
  ############################  Single 20-step ahead prediction 2-D ########################## 
 # df = pd.read_csv("./synthetic_data/sinus_scenarios/2D_noisy_sin_period126_year4_ahead6_seed10.csv")
 
 
-df = pd.read_csv("./data_price/data/Apple/AAPL_Shifted_30ahead.csv")
+df = pd.read_csv("./data_price/data/Microsoft/MSFT_Shifted_30ahead.csv")
 
 data_name = 'Close'
 lagged_data_name = 'Close_ahead30'
