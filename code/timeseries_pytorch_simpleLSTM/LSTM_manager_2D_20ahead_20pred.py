@@ -1,3 +1,4 @@
+import matplotlib
 import torch	
 import torch.nn as nn	
 import math	
@@ -16,22 +17,19 @@ import neptune
 import neptunecontrib.monitoring.optuna as opt_utils
 
 
-import shap
-
 
 ###### making reproducable #######	
 import os	
 os.environ['CUBLAS_WORKSPACE_CONFIG']=':16:8'	
-torch.set_deterministic(True)	
-np.random.seed(17)	
-torch.manual_seed(17)	
-torch.cuda.manual_seed_all(17)	
-torch.backends.cudnn.deterministic = True	
+torch.set_deterministic(True)
+torch.backends.cudnn.deterministic = True
 # the detect anomaly is just for debugging, but sometimes it solves a problem of nvidia graphics drivers on windows.	
 torch.autograd.set_detect_anomaly(True)	
 ## os.environ[‘CUDA_LAUNCH_BLOCKING’] = 1 if 1 all nothing happens asynchronizly, maybe it helps to debug something but should not be used in production I think. 	
 # check influence on training time	
 # os.environ[‘CUDA_LAUNCH_BLOCKING’] = 1	
+
+
 #%%	
 ################ CREATE THE PYTORCH LSTM MODEL ###################################	
 ### 2 in 2 uit misschien even kijken hoe dat zit misschien willen we maar output size 1 hebben maar weet niet precies hoe de forward method daarmee omgaat. 	
@@ -41,7 +39,6 @@ class LSTM(nn.Module):
     def __init__(self, input_size=2, hidden_layer_size=40, output_size=1, dropout = 0.0, num_layers=1):	
         super().__init__()	
         self.hidden_layer_size = hidden_layer_size	
-        print('lstm input size', input_size)	
         self.lstm = nn.LSTM(input_size, hidden_layer_size, dropout=dropout, num_layers=num_layers)	
         self.linear = nn.Linear(hidden_layer_size, output_size)	
         self.hidden_cell = (torch.zeros(num_layers,1,self.hidden_layer_size).cuda(), 	
@@ -49,19 +46,22 @@ class LSTM(nn.Module):
         	
     def forward(self, input_seq):	
         # input_seq = input_seq.view(int(len(input_seq)/15), 1, 15)	
-        input_seq = input_seq.view(len(input_seq), 1, 2)	
-        lstm_out, self.hidden_cell = self.lstm(input_seq, self.hidden_cell)	
-        predictions = self.linear(lstm_out.view(len(input_seq), -1))	
+
+        #the 20 is the trainwindow instead of len(input_seq)
+        input_seq = input_seq.view(len(input_seq), 1, 2)
+        lstm_out, self.hidden_cell = self.lstm(input_seq, self.hidden_cell)
+        #the 20 is the trainwindow instead of len(input_seq)
+        predictions = self.linear(lstm_out.view(len(input_seq), -1))
         # predictions = self.linear(lstm_out)	
         # return predictions[-1]	
-        return predictions[-1,:]
+        return predictions[-1,:].view(1,1)
 
     	
 class LSTMHandler():	
     """	
     A class that can train/save a model and make predictions.	
     """	
-    def __init__(self):	
+    def __init__(self, seed = 0):	
         """	
         Init class	
         """	
@@ -78,6 +78,10 @@ class LSTMHandler():
         self.device = None	
         self.hist = None	
         self.stateDict = None
+        # Set the seed when intitializing this class.
+        np.random.seed(seed)	
+        torch.manual_seed(seed)	
+        torch.cuda.manual_seed_all(seed)	
 
     def create_train_test_data(self, data = None, data_name = None, lagged_data_name=None, test_size=365):	
         # Create a new dataframe with only the 'Close column'	
@@ -159,7 +163,7 @@ class LSTMHandler():
                 single_loss.backward()	
                 optimizer.step()	
                 	
-            neptune.log_metric('loss', single_loss)	
+            # neptune.log_metric('loss', single_loss)	
             self.hist[i] = single_loss.item()	
             	
             # if i%1 == 1:	
@@ -171,7 +175,7 @@ class LSTMHandler():
         if(modelpath!=None):	
             path_to_save = modelpath	
             torch.save(self.stateDict, path_to_save)	
-            neptune.log_artifact(path_to_save)	
+            # neptune.log_artifact(path_to_save)	
         return  self.stateDict	
     	
     def make_predictions_from_model(self, modelpath=None, modelstate=None):	
@@ -184,7 +188,6 @@ class LSTMHandler():
         ####### making predictions #############	
         fut_pred = self.test_data_size	
         test_inputs = self.train_data_normalized[-(self.train_window+19):].tolist()	
-        self.test_inout_seq = self._create_inout_sequences(test_inputs, self.train_window)
 
         model = LSTM(hidden_layer_size=self.hidden_layer_size, num_layers = self.num_layers).to(device)	
         if(modelpath != None):	
@@ -279,37 +282,68 @@ class LSTMHandler():
         study.optimize(func, n_trials=2, callbacks=[neptune_callback])	
         opt_utils.log_study_info(study)
 
-    def explain_simple_prediction(self, modelpath=None, modelstate=None):
+    # def explain_simple_prediction(self, modelpath=None, modelstate=None):
 
-        # The SHAP deepexplainer needs a model and a background. Here the trained model is loaded.
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #assuming gpu is available	
-        model = LSTM(hidden_layer_size=self.hidden_layer_size, num_layers = self.num_layers).to(device)	
-        if(modelpath != None):	
-            model.load_state_dict(torch.load(modelpath))	
-        elif(modelstate != None):	
-            model.load_state_dict(modelstate)	
-        else:	
-            model.load_state_dict(self.stateDict)	
+    #     # The SHAP deepexplainer needs a model and a background. Here the trained model is loaded.
+    #     device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #assuming gpu is available	
+    #     model = LSTM(hidden_layer_size=self.hidden_layer_size, num_layers = self.num_layers).to(device)	
+    #     if(modelpath != None):	
+    #         model.load_state_dict(torch.load(modelpath))	
+    #     elif(modelstate != None):	
+    #         model.load_state_dict(modelstate)	
+    #     else:	
+    #         model.load_state_dict(self.stateDict)	
 
-        # The SHAP deepexplainer needs a model and a background. Here the background is created and 15 samples from the trainset are selected to calculate the expected value.
-        training_windows = [trainingwindow[0] for trainingwindow in self.train_inout_seq]
-        background = training_windows[np.random.choice(training_windows.shape[0], 5, replace=False)]
-        # Here the deepexplainer is made using the trained model and the samples to come up with averages.
-        e = shap.DeepExplainer(model, background)
+    #     # The SHAP deepexplainer needs a model and a background. Here the background is created and 15 samples from the trainset are selected to calculate the expected value.
+    #     training_windows = np.array([trainingwindow[0] for trainingwindow in self.train_inout_seq])
+    #     background = training_windows[np.random.choice(training_windows.shape[0], 5, replace=False)]
 
-        # To evaluate a prediction with the explainer test inputs should be specified. 
-        evaluation_windows = [evaluation_window[0] for evaluation_window in self.test_inout_seq]
+    #     # training_windows = np.array([trainingwindow[0].cpu().detach().numpy() for trainingwindow in self.train_inout_seq])
 
-        # now the prediction(s) to explain is specified. 
-        prediction_to_explain = evaluation_windows.iloc[0,:]
+    #     print(type(background))
+    #     print(background.shape)
 
-        shap_values = e.shap_values(prediction_to_explain)
+    #     background = background.tolist()
+    #     # background = background.astype(float)
+    #     print(type(background))
+      
+    #     background = torch.stack(background)
         
-        shap.force_plot(e.expected_value, shap_values, prediction_to_explain)
+    #     print(type(background))
 
-        return
+    #     # print(background.shape[0])
+    #     # print(background.shape)
+    #     # Here the deepexplainer is made using the trained model and the samples to come up with averages.
+    #     print("create deepexplainer")
+    #     e = shap.DeepExplainer(model, background.view(5,20,2))
 
-    def _create_inout_sequences(input_data, tw):	
+    #     # To evaluate a prediction with the explainer test inputs should be specified.
+
+    #     # THIS CHANGE IS MADE TO MAKE THE TESTINOUTSEQ BE FIT, BUT MAYBE WE DO NOT WANT THIS AND THE PREDICTION GETS CRAZY.
+    #     test_inputs = self.train_data_normalized[-(self.train_window+20):]
+    #     # test_inputs = self.train_data_normalized[-(self.train_window+19):].tolist()	
+    #     self.test_inout_seq = self._create_inout_sequences(test_inputs, self.train_window)
+
+    #     evaluation_windows = np.array([evaluation_window[0] for evaluation_window in self.test_inout_seq])
+    #     evaluation_windows = evaluation_windows.tolist()
+        
+    #     print(type(evaluation_windows))
+    #     # now the prediction(s) to explain is specified. 
+    #     prediction_to_explain = evaluation_windows[0].view(1,20,2)
+
+    #     print(type(prediction_to_explain))
+    #     print(prediction_to_explain.shape)
+        
+    #     print("shap values")
+
+    #     shap_values = e.shap_values(prediction_to_explain)
+
+    #     shap.initjs()
+    #     shap.force_plot(e.expected_value, shap_values, prediction_to_explain)
+    #     # shap.text_plot(shap_values)
+    #     return
+
+    def _create_inout_sequences(self, input_data, tw):	
         inout_seq = []	
         for i in range(len(input_data)-tw-19):	
             train_seq = input_data[i:i+tw]	
