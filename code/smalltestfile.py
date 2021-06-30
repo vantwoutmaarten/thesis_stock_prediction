@@ -1,10 +1,15 @@
-import numpy as np
+datafilename = '/home/nfs/mavantwout/data/CocaCola/missing90/KO-m90-1imputation-forwardfill.csv'
 
-arr = np.random.random((5,5))
+def getDataInfo(datafilename):
+    split_on_data = datafilename.partition('/data/')
+    split_for_missing =  split_on_data[2].partition('/missing')
+    company = split_for_missing[0]
+    missingness = split_for_missing[2][:2]
+    split_for_imputation= datafilename.partition('imputation-')
+    imputation = split_for_imputation[2].partition('.')[0]
 
-print(arr)
+    print(company)
+    print(missingness)
+    print(imputation)
 
-x = -arr[:2]
-print("and now the slice")
-
-print(x)
+getDataInfo(datafilename)

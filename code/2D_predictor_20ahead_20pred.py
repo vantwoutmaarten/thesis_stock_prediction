@@ -28,7 +28,7 @@ neptune.init(project_qualified_name='mavantwout/Imputation',
              )
 
 PARAMS = {'epochs': 80,
-        'lr':  0.000029177560092619997,
+        'lr':  0.00029177560092619997,
         'hls' : 28,
         'train_window': 20, 
         'opt' : 'RMSprop',
