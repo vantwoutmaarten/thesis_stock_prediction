@@ -109,10 +109,6 @@ for seed in range(seeds):
 # # the test size in this case is 1, since we are only trying to predict 1 value, but 20 steps ahead. 
 # s.create_train_test_data(data = data, data_name = data_name, lagged_data_name=lagged_data_name, test_size=20)
 
-
 # s.optimize()
 
 # neptune.stop()
-# %%
-
-# %%

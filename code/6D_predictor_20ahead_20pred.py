@@ -21,7 +21,7 @@ neptune.init(project_qualified_name='mavantwout/sandbox',
              api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiODBkNzdjMDUtYmYxZi00ODFjLWExN2MtNjk3Y2MwZDE5N2U2In0=',
              )
 
-PARAMS = {'epochs': 80,
+PARAMS = {'epochs': 1,
         'lr':  0.00029177560092619997,
         'hls' : 28,
         'train_window': 20, 
@@ -35,7 +35,7 @@ for seed in range(seeds):
     # Create experiment
     neptune.create_experiment('6D_20-step ahead predict_returns', params = PARAMS, upload_source_files=['../timeseries_pytorch_simpleLSTM/LSTM_manager_6D_20ahead.py', '6D_predictor_20ahead_20pred.py'], tags=['single_run', '6D-prediction', '4-year', '20-step-ahead', '20-predictions', 'shifted30', 'minmax-11','returns','seed'+str(seed)])
 
-    ############################  Single 20-step ahead prediction 2-D ########################## 
+    ############################  Single 20-step ahead prediction 6-D ########################## 
     df = pd.read_csv("./data_price/data/Apple/missing33/AAPL_Shifted_30ahead.csv")
 
     data_name = 'Close'

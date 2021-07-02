@@ -135,7 +135,6 @@ class LSTMHandler():
         train_data = all_data[:-(self.test_data_size)]	
         test_data = all_data[-self.test_data_size:]
 
-
         self.scaler = MinMaxScaler(feature_range=(-1, 1))
         # self.scaler = StandardScaler()
         # 	
@@ -147,7 +146,7 @@ class LSTMHandler():
         train_data_normalized = self.scaler.fit_transform(train_data)	
         # maybe data normalization shoudl only be applied to training data and not on test data	
         # Convert the data to a tensor	
-        self.train_data_normalized = torch.cuda.FloatTensor(train_data_normalized).view(-1,2)
+        self.train_data_normalized = torch.cuda.FloatTensor(train_data_normalized).view(-1,6)
 
 
     def create_trained_model(self, params=None, modelpath=None):	
@@ -226,9 +225,8 @@ class LSTMHandler():
                 model.hidden_cell = (torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda(), torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda())	
                 modeloutput = model(seq).item()
                 # test_inputs = torch.cat((test_inputs, modeloutput), 0)	
-                	
-                test_inputs.append([modeloutput, np.NAN])	
-        actual_predictions = self.scaler.inverse_transform(np.array(test_inputs[-self.test_data_size:]).reshape(-1, 2))	
+                test_inputs.append([modeloutput, np.NAN, np.NAN,np.NAN,np.NAN,np.NAN])	
+        actual_predictions = self.scaler.inverse_transform(np.array(test_inputs[-self.test_data_size:]).reshape(-1, 6))	
 
         def invert_difference(dataset, lasttrainlabel):
             diff = list()
