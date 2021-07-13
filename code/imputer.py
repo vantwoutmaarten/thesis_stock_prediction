@@ -1,11 +1,14 @@
+from os import truncate
 import numpy as np
 import pandas as pd
 
 from sktime.forecasting.trend import PolynomialTrendForecaster
+from scipy.interpolate import InterpolatedUnivariateSpline
+from scipy.interpolate import interp1d
 
 def createImputedColumns(df, col_name, 
                         forwardfill = False, globalmean = False, windowof30mean = False, linear30fit = False, cubic30fit = False,
-                        globalmean_incl_imputation=True, windowmean_incl_imputation=True, linear30fit_incl_imputatation=True, cubic30fit_incl_imputation=True):
+                        globalmean_incl_imputation=True, windowmean_incl_imputation=True, linear30fit_incl_imputation=True, cubic30fit_incl_imputation=True):
     if(forwardfill):
         createForwardFilledColumn(df, col_name)
     
@@ -16,16 +19,18 @@ def createImputedColumns(df, col_name,
         createMeanOfLast30Column(df, col_name, windowmean_incl_imputation)
     
     if(linear30fit):
-        createLinear30FitColumn(df, col_name, linear30fit_incl_imputatation)
+        createLinear30FitColumn(df, col_name, linear30fit_incl_imputation)
     
     if(cubic30fit):
         createCubic30FitColumn(df, col_name, cubic30fit_incl_imputation)
 
-def createLinear30FitColumn(df, col_name, linear30fit_incl_imputatation):
+def createLinear30FitColumn(df, col_name, linear30fit_incl_imputation):
     new_col_name = col_name + '_linearfit30'
     # new_col_name = col_name + '_imputed'
-    
+    degree = 1
+
     linearfit_missing = df[col_name].copy()
+    linearfit_imputed = df[col_name].copy()
 
     forecast = linearfit_missing[0]
 
@@ -33,50 +38,73 @@ def createLinear30FitColumn(df, col_name, linear30fit_incl_imputatation):
         if(np.isnan(linearfit_missing[day])):
             if(day != 0):
                 if(day < 30):
-                    fh = np.arange(1)+1
-                    forecaster = PolynomialTrendForecaster(degree=1)
-                    y_train = linearfit_missing[0:day]
-                    forecaster.fit(y_train)
-                    y_pred = forecaster.predict(fh)
-                    linearfit_missing[day] = y_pred
+                    if(linear30fit_incl_imputation):
+                        y_train = linearfit_imputed[0:day]
+                    else:
+                        y_train = linearfit_missing[0:day]
+                    y_train = y_train.dropna()   
+                    while(len(y_train)<=degree):
+                        degree = degree - 1
+                    weights = np.polyfit(y_train.index.values, y_train.values, degree)
+                    model = np.poly1d(weights)
+                    y_pred = model(day)
+                    linearfit_imputed[day] = y_pred
                 else:
-                    fh = np.arange(1)
-                    forecaster = PolynomialTrendForecaster(degree=1)
-                    y_train = linearfit_missing[day-30:day]
-                    forecaster.fit(y_train)
-                    y_pred = forecaster.predict(fh)
-                    linearfit_missing[day] = y_pred
+                    if(linear30fit_incl_imputation):
+                        y_train = linearfit_imputed[day-30:day]
+                    else:
+                        y_train = linearfit_missing[day-30:day]
+                    y_train = y_train.dropna()
+                    while(len(y_train)<=degree):
+                        degree = degree - 1
+                    weights = np.polyfit(y_train.index.values, y_train.values, degree)
+                    model = np.poly1d(weights)
+                    y_pred = model(day)
+                    linearfit_imputed[day] = y_pred
         
-    df[new_col_name] = linearfit_missing
+    df[new_col_name] = linearfit_imputed
+
     df.to_csv(FILEPATH, index=False)
 
 def createCubic30FitColumn(df, col_name, cubic30fit_incl_imputation):
     new_col_name = col_name + '_cubicfit30'
     # new_col_name = col_name + '_imputed'
+    degree = 3
 
     cubicfit_missing = df[col_name].copy()
+    cubicfit_imputed = df[col_name].copy()
 
-    forecast = cubicfit_missing[0]
 
     for day in range(df['Close_ahead30'].count()):
         if(np.isnan(cubicfit_missing[day])):
             if(day != 0):
                 if(day < 30):
-                    fh = np.arange(1)+1
-                    forecaster = PolynomialTrendForecaster(degree=3)
-                    y_train = cubicfit_missing[0:day]
-                    forecaster.fit(y_train)
-                    y_pred = forecaster.predict(fh)
-                    cubicfit_missing[day] = y_pred
+                    if(cubic30fit_incl_imputation):
+                        y_train = cubicfit_imputed[0:day]
+                    else:
+                        y_train = cubicfit_missing[0:day]
+                    y_train = y_train.dropna()   
+                    while(len(y_train)<=degree):
+                        degree = degree - 1
+                    weights = np.polyfit(y_train.index.values, y_train.values, degree)
+                    model = np.poly1d(weights)
+                    y_pred = model(day)
+                    cubicfit_imputed[day] = y_pred
                 else:
-                    fh = np.arange(1)
-                    forecaster = PolynomialTrendForecaster(degree=3)
-                    y_train = cubicfit_missing[day-30:day]
-                    forecaster.fit(y_train)
-                    y_pred = forecaster.predict(fh)
-                    cubicfit_missing[day] = y_pred
+                    if(cubic30fit_incl_imputation):
+                        y_train = cubicfit_imputed[day-30:day]
+                    else:
+                        y_train = cubicfit_missing[day-30:day]
+                    y_train = y_train.dropna()
+                    while(len(y_train)<=degree):
+                        degree = degree - 1
+                    weights = np.polyfit(y_train.index.values, y_train.values, degree)
+                    model = np.poly1d(weights)
+                    y_pred = model(day)
+                    cubicfit_imputed[day] = y_pred
         
-    df[new_col_name] = cubicfit_missing
+    df[new_col_name] = cubicfit_imputed
+
     df.to_csv(FILEPATH, index=False)
 
 def createMeanOfLast30Column(df, col_name, windowmean_incl_imputation):
@@ -164,12 +192,13 @@ def createForwardFilledColumn(df, col_name):
 
 # FILEPATH = "./synthetic_data/univariate_missingness/noisy_sin_period126_seasonalperiod628_year7_missing33_seed2.csv"
 # FILEPATH = "./data_price/data/Apple/missing33/AAPL_Shifted_30ahead.csv"
-FILEPATH = "imputatationtestfile.csv"
+FILEPATH = "imputatationtest90.csv"
 df = pd.read_csv(FILEPATH)
 # df = pd.read_csv(FILEPATH, index_col=0)
 # col_name = 'noisy_sin_random_missing'
-col_name = 'Close_ahead30_missing30'
+col_name = 'Close_ahead30_missing90'
+
 
 createImputedColumns(df, col_name, 
-                    forwardfill = False, globalmean = False, windowof30mean = True, linear30fit = False, cubic30fit = False,
-                    globalmean_incl_imputation=False, windowmean_incl_imputation=False, linear30fit_incl_imputatation=False, cubic30fit_incl_imputation=False)
+                    forwardfill = False, globalmean = False, windowof30mean = False, linear30fit = False, cubic30fit = True,
+                    globalmean_incl_imputation=False, windowmean_incl_imputation=False, linear30fit_incl_imputation=False, cubic30fit_incl_imputation=False)

@@ -36,8 +36,8 @@ torch.autograd.set_detect_anomaly(True)
 ### even in de docs kijken van PyTorch.	
 ### We are using this now and if it is working then we are changing the error calculation, by changin the train model part and the output size of the model to 1.	
 class LSTM(nn.Module):	
-    def __init__(self, input_size=2, hidden_layer_size=40, output_size=1, dropout = 0.0, num_layers=1):	
-        super().__init__()	
+    def __init__(self, input_size=6, hidden_layer_size=40, output_size=1, dropout = 0.0, num_layers=1):	
+        super().__init__()
         self.hidden_layer_size = hidden_layer_size	
         self.lstm = nn.LSTM(input_size, hidden_layer_size, dropout=dropout, num_layers=num_layers)	
         self.linear = nn.Linear(hidden_layer_size, output_size)	
@@ -48,7 +48,7 @@ class LSTM(nn.Module):
         # input_seq = input_seq.view(int(len(input_seq)/15), 1, 15)	
 
         #the 20 is the trainwindow instead of len(input_seq)
-        input_seq = input_seq.view(len(input_seq), 1, 2)
+        input_seq = input_seq.view(len(input_seq), 1, 6)
         lstm_out, self.hidden_cell = self.lstm(input_seq, self.hidden_cell)
         #the 20 is the trainwindow instead of len(input_seq)
         predictions = self.linear(lstm_out.view(len(input_seq), -1))
@@ -67,8 +67,13 @@ class LSTMHandler():
         """	
         self.data = None	
         self.data_name = None	
-        self.lagged_data_name = None	
         self.train_data_normalized = None	
+        self.train_lagged_forwardfill= None
+        self.train_lagged_globalmean= None
+        self.train_lagged_meanlast30= None
+        self.train_lagged_linearfit30= None
+        self.train_lagged_cubicfit30= None
+
         self.lasttrainlabel = None
         # use a train windows that is domain dependent here 365 since it is daily data per year	
         self.train_window = None
@@ -83,11 +88,24 @@ class LSTMHandler():
         torch.manual_seed(seed)	
         torch.cuda.manual_seed_all(seed)	
 
-    def create_train_test_data(self, data = None, data_name = None, lagged_data_name=None, test_size=365):	
+    def create_train_test_data(self, data = None,
+     data_name = None,
+     train_lagged_forwardfill=None,
+     train_lagged_globalmean=None,
+     train_lagged_meanlast30=None,
+     train_lagged_linearfit30=None,
+     train_lagged_cubicfit30=None,
+     test_size=365
+     ):	
         # Create a new dataframe with only the 'Close column'	
         self.data = data	
         self.data_name = data_name	
-        self.lagged_data_name = lagged_data_name	
+        self.train_lagged_forwardfill= train_lagged_forwardfill
+        self.train_lagged_globalmean=train_lagged_globalmean
+        self.train_lagged_meanlast30=train_lagged_meanlast30
+        self.train_lagged_linearfit30=train_lagged_linearfit30
+        self.train_lagged_cubicfit30=train_lagged_cubicfit30
+
         all_data = self.data
 
 
@@ -109,7 +127,10 @@ class LSTMHandler():
         
         all_data.iloc[:, 0] = difference1lag(all_data.iloc[:, 0])
         all_data.iloc[:, 1] = difference1lag(all_data.iloc[:, 1])
-
+        all_data.iloc[:, 2] = difference1lag(all_data.iloc[:, 2])
+        all_data.iloc[:, 3] = difference1lag(all_data.iloc[:, 3])
+        all_data.iloc[:, 4] = difference1lag(all_data.iloc[:, 4])
+        all_data.iloc[:, 5] = difference1lag(all_data.iloc[:, 5])
     
         train_data = all_data[:-(self.test_data_size)]	
         test_data = all_data[-self.test_data_size:]
@@ -126,7 +147,7 @@ class LSTMHandler():
         train_data_normalized = self.scaler.fit_transform(train_data)	
         # maybe data normalization shoudl only be applied to training data and not on test data	
         # Convert the data to a tensor	
-        self.train_data_normalized = torch.cuda.FloatTensor(train_data_normalized).view(-1,2)
+        self.train_data_normalized = torch.cuda.FloatTensor(train_data_normalized).view(-1,6)
 
 
     def create_trained_model(self, params=None, modelpath=None):	
@@ -206,8 +227,8 @@ class LSTMHandler():
                 modeloutput = model(seq).item()
                 # test_inputs = torch.cat((test_inputs, modeloutput), 0)	
                 	
-                test_inputs.append([modeloutput, np.NAN])	
-        actual_predictions = self.scaler.inverse_transform(np.array(test_inputs[-self.test_data_size:]).reshape(-1, 2))	
+                test_inputs.append([modeloutput, np.NAN, np.NAN,np.NAN,np.NAN,np.NAN])	
+        actual_predictions = self.scaler.inverse_transform(np.array(test_inputs[-self.test_data_size:]).reshape(-1, 6))
 
         def invert_difference(dataset, lasttrainlabel):
             diff = list()
