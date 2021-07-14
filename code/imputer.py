@@ -42,7 +42,8 @@ def createLinear30FitColumn(df, col_name, linear30fit_incl_imputation):
                         y_train = linearfit_imputed[0:day]
                     else:
                         y_train = linearfit_missing[0:day]
-                    y_train = y_train.dropna()   
+                    y_train = y_train.dropna()
+                    degree = 1   
                     while(len(y_train)<=degree):
                         degree = degree - 1
                     weights = np.polyfit(y_train.index.values, y_train.values, degree)
@@ -55,6 +56,7 @@ def createLinear30FitColumn(df, col_name, linear30fit_incl_imputation):
                     else:
                         y_train = linearfit_missing[day-30:day]
                     y_train = y_train.dropna()
+                    degree = 1
                     while(len(y_train)<=degree):
                         degree = degree - 1
                     weights = np.polyfit(y_train.index.values, y_train.values, degree)
@@ -83,7 +85,8 @@ def createCubic30FitColumn(df, col_name, cubic30fit_incl_imputation):
                         y_train = cubicfit_imputed[0:day]
                     else:
                         y_train = cubicfit_missing[0:day]
-                    y_train = y_train.dropna()   
+                    y_train = y_train.dropna()
+                    degree = 3   
                     while(len(y_train)<=degree):
                         degree = degree - 1
                     weights = np.polyfit(y_train.index.values, y_train.values, degree)
@@ -96,6 +99,7 @@ def createCubic30FitColumn(df, col_name, cubic30fit_incl_imputation):
                     else:
                         y_train = cubicfit_missing[day-30:day]
                     y_train = y_train.dropna()
+                    degree = 3
                     while(len(y_train)<=degree):
                         degree = degree - 1
                     weights = np.polyfit(y_train.index.values, y_train.values, degree)
@@ -181,18 +185,15 @@ def createForwardFilledColumn(df, col_name):
     forwardfill_missing = df[col_name].copy()
 
     # This method does forward filling, at the moment it is only compatible with series with a value at index 0
-    print(df['Close_ahead30'].count())
     for day in range(df['Close_ahead30'].count()):
         if(np.isnan(forwardfill_missing[day])):
             forwardfill_missing[day] = forwardfill_missing[day-1]
-            print(forwardfill_missing[day])
 
     df[new_col_name] = forwardfill_missing
     df.to_csv(FILEPATH, index=False) 
 
 # FILEPATH = "./synthetic_data/univariate_missingness/noisy_sin_period126_seasonalperiod628_year7_missing33_seed2.csv"
-# FILEPATH = "./data_price/data/Apple/missing33/AAPL_Shifted_30ahead.csv"
-FILEPATH = "imputatationtest90.csv"
+FILEPATH = "./data_price/imputed_data/Microsoft/missing90/MSFT_Shifted_30ahead.csv"
 df = pd.read_csv(FILEPATH)
 # df = pd.read_csv(FILEPATH, index_col=0)
 # col_name = 'noisy_sin_random_missing'
@@ -200,5 +201,5 @@ col_name = 'Close_ahead30_missing90'
 
 
 createImputedColumns(df, col_name, 
-                    forwardfill = False, globalmean = False, windowof30mean = False, linear30fit = False, cubic30fit = True,
+                    forwardfill = True, globalmean = True, windowof30mean = True, linear30fit = True, cubic30fit = True,
                     globalmean_incl_imputation=False, windowmean_incl_imputation=False, linear30fit_incl_imputation=False, cubic30fit_incl_imputation=False)

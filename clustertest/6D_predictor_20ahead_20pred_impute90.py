@@ -16,17 +16,18 @@ import optuna
 
 import neptune
 from neptunecontrib.api import log_chart
+import os
 
-neptune.init(project_qualified_name='mavantwout/Imputation',
+neptune.init(project_qualified_name='mavantwout/imputeCorrected',
              api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiODBkNzdjMDUtYmYxZi00ODFjLWExN2MtNjk3Y2MwZDE5N2U2In0=',
              )
 def getDataInfo(datafilename, seed):
-    split_on_data = datafilename.partition('/data/')
+    split_on_data = datafilename.partition('/imputed_data/')
     split_for_missing =  split_on_data[2].partition('/missing')
     company = split_for_missing[0]
     missingness = split_for_missing[2][:2]
-    split_for_imputation= datafilename.partition('imputation-')
-    imputation = split_for_imputation[2].partition('.')[0]
+
+    imputation = '5_imputations_combined'
 
     neptune.log_text('company', str(company))
     neptune.log_text('missingness', str(missingness))
@@ -45,7 +46,7 @@ PARAMS = {'epochs': 80,
 seeds = 1
 for seed in range(seeds):
     # Create experiment
-    neptune.create_experiment('6D_20-step ahead predict_returns', params = PARAMS, upload_source_files=['../timeseries_pytorch_simpleLSTM/LSTM_manager_6D_20ahead.py', '6D_predictor_20ahead_20pred.py'], tags=['single_run', '6D-prediction', '4-year', '20-step-ahead', '20-predictions', 'shifted30', 'minmax-11','returns','seed'+str(seed)])
+    neptune.create_experiment('6D_20-step ahead predict_returns', params = PARAMS, upload_source_files=['../timeseries_pytorch_simpleLSTM/LSTM_manager_6D_20ahead.py', '6D_predictor_20ahead_20pred.py'], tags=['single_run', '6D-prediction', '4-year', '20-step-ahead', '20-predictions', 'shifted30', 'minmax-11','returns','excluding_imputedvalues','seed'+str(seed)])
 
     ############################  Single 20-step ahead prediction 6-D ########################## 
     FILEPATH = os.getenv('arg1')
