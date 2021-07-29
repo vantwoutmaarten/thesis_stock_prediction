@@ -2,38 +2,38 @@
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-plt.rcParams['figure.figsize'] = [15, 10]
+plt.rcParams['figure.figsize'] = [10, 5]
 import xlsxwriter
 
 #%%
 # subplots split by company.
-df = pd.read_excel ('./imputeCorrected.xlsx', sheet_name='imputeCorrected')
+df = pd.read_excel ('./excl-imputation-prices.xlsx', sheet_name='excl-imputation-prices')
 df.head()
 
 
 def plotSwarms():
     plt.figure()
     plt.title("Apple")
-    ax = sns.swarmplot(x='imputation', y='smape', hue='missingness', data = df[df['company']=='Apple'])
+    ax = sns.swarmplot(x='imputation', y='smape', hue='missingness', data = df[df['company']=='Apple'].sort_values(by=['imputation']))
 
     plt.figure()
     plt.title("CocaCola")
-    ax = sns.swarmplot(x='imputation', y='smape', hue='missingness', data = df[df['company']=='CocaCola'])
+    ax = sns.swarmplot(x='imputation', y='smape', hue='missingness', data = df[df['company']=='CocaCola'].sort_values(by=['imputation']))
 
     plt.figure()
     plt.title("Microsoft")
-    ax = sns.swarmplot(x='imputation', y='smape', hue='missingness', data = df[df['company']=='Microsoft']).set_title('Microsoft')
+    ax = sns.swarmplot(x='imputation', y='smape', hue='missingness', data = df[df['company']=='Microsoft'].sort_values(by=['imputation']))
 
     #%%
-    plt.figure()
-    g = sns.catplot(x="imputation", y="smape",
-                    hue="missingness", row="company",
-                    data=df, kind="swarm");
+    # plt.figure()
+    # g = sns.catplot(x="imputation", y="smape",
+    #                 hue="missingness", row="company",
+    #                 data=df, kind="swarm");
 
     # a plot with all companies together. 
     plt.rcParams['figure.figsize'] = [10, 5]
     plt.figure()
-    ax = sns.swarmplot(x='imputation', y='smape', hue='missingness', data = df)
+    ax = sns.swarmplot(x='imputation', y='smape', hue='missingness', data = df.sort_values(by=['imputation'])).set_title('performance of three companies')
 
 
 def createErrorTables():
@@ -91,7 +91,7 @@ def createErrorTables():
     #Quickly check what happens when written to same sheet. 
 
     # Create a Pandas Excel writer using XlsxWriter as the engine.
-    with pd.ExcelWriter('./impute_excl_imputations_stockreturns.xlsx', engine='xlsxwriter') as writer:    
+    with pd.ExcelWriter('./impute_excl_imputations_stockprices_test2.xlsx', engine='xlsxwriter') as writer:    
         # Write each dataframe to a different worksheet.
         
         results_missing33_processed.to_excel(writer, sheet_name='missingness33_1index')
@@ -104,7 +104,7 @@ def createErrorTables():
 plotSwarms()
 
 #%%
-createErrorTables()
+# createErrorTables()
 
 
 # %%

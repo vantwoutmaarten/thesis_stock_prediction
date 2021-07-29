@@ -29,7 +29,7 @@ intrinio.ApiClient().set_api_key('OjI0ZmZjNDNmOTlmZDhmZDgzM2VlMzdlYjFiZDAzZjIx')
 intrinio.ApiClient().allow_retries(True)
 
 tickers = ['AAPL']
-page_size = 2
+page_size = 5
 next_page = ''
 company_ticker = []
 name = []
@@ -78,6 +78,6 @@ dict = {'article_id': article_id, 'date': date, 'time': time,'ticker': company_t
 df = pd.DataFrame(dict)
 pd.set_option('display.max_colwidth', -1)
 pd.set_option('display.max_columns',20)
-# print(df) 
+print(df) 
 # print(df.loc[0, ['title_summary']])
 ######################
