@@ -7,7 +7,7 @@ import copy
 # Save stock price data from yahoo
 # when missing = True,  it creates artificial missingness that replicates the amount of missingness in quarterly figures compared to the daily frame.
 def create_1D_stockprice(scenario_name, missing=False):
-    df = web.DataReader('AAPL', data_source='yahoo', start='2017-03-31',  end='2021-06-01')
+    df = web.DataReader('MSFT', data_source='yahoo', start='2017-03-31',  end='2021-06-01')
     total_days = df['Close'].count()
     data = df.filter(['Close'])
     
@@ -115,4 +115,4 @@ def create_2D_shifted_stockprice(scenario_name, missing_percentage = 0):
 
 # create_2D_shifted_stockprice(scenario_name = 'MSFT_Shifted_30ahead_m985.csv', missing_percentage = 98.5)
 
-# create_1D_stockprice(scenario_name = 'AAPL.csv', missing=FALSE)
+create_1D_stockprice(scenario_name = 'MSFT_missing985.csv', missing=True)
