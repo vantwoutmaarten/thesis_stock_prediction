@@ -37,7 +37,7 @@ def getDataInfo(datafilename):
     neptune.log_text('imputation', str(imputation))
 
 # Create experiment
-neptune.create_experiment('12D_20-step ahead predict_exp5_test-optimization', upload_source_files=['../timeseries_pytorch_simpleLSTM/LSTM_manager_6D_20ahead.py', '6D_predictor_20ahead_20pred.py'], tags=['single_run', '6D-prediction', '4-year', '20-step-ahead', '20-predictions', 'shifted30', 'minmax-11','returns','excluding_imputedvalues','seed'+str(seed)])
+neptune.create_experiment('12D_20-step ahead predict_exp5_test-optimization', upload_source_files=['../LSTM_manager_12D.py', '12D_predictor_20ahead_tuner.py'], tags=['optimization', '12D-prediction', '4-year', '20-step-ahead', '20-predictions','quarterly'])
 
 ############################  Single 20-step ahead prediction 6-D ##########################
 # FILEPATH = os.getenv('arg1')

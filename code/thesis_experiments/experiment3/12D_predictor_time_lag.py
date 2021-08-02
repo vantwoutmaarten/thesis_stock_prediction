@@ -37,7 +37,7 @@ def getDataInfo(datafilename, seed):
     neptune.log_text('imputation', str(imputation))
     neptune.log_text('seed', str(seed))
 
-PARAMS = {'epochs': 2,
+PARAMS = {'epochs': 1,
         'lr':  0.00029177560092619997,
         'hls' : 28,
         'train_window': 20, 
@@ -49,7 +49,7 @@ PARAMS = {'epochs': 2,
 seeds = 1
 for seed in range(seeds):
     # Create experiment
-    neptune.create_experiment('12D_20-step ahead predict_exp5_test-local', params = PARAMS, upload_source_files=['../timeseries_pytorch_simpleLSTM/LSTM_manager_6D_20ahead.py', '6D_predictor_20ahead_20pred.py'], tags=['single_run', '6D-prediction', '4-year', '20-step-ahead', '20-predictions', 'shifted30', 'minmax-11','returns','excluding_imputedvalues','seed'+str(seed)])
+    neptune.create_experiment('12D_20-step ahead predict_exp5_test-local_timelag', params = PARAMS, upload_source_files=['../LSTM_manager_12D.py', '12D_predictor_.py'], tags=['single_run', 'time-lag', '12D-prediction', '4-year', '20-step-ahead', '20-predictions', 'quarterly','seed'+str(seed)])
 
     ############################  Single 20-step ahead prediction 6-D ##########################
     # FILEPATH = os.getenv('arg1')
@@ -112,6 +112,8 @@ for seed in range(seeds):
         )
 
     neptune.log_image('univariate_plot', fig)
+    ax.get_legend().remove()
+    log_chart(name='univariate_plot', chart=fig)
 
     # make the general scaler for all the columns and make the fitted scaler for the y_pred
     scaler = MinMaxScaler(feature_range=(-1, 1))
@@ -140,7 +142,6 @@ for seed in range(seeds):
 
     y_train_time_lag, y_test_time_lag= temporal_train_test_split(data[time_lag], test_size=test_size)
 
-    
   
     indexpred = list(y_pred.index)
     y_pred = fittedscaler.transform(y_pred.values.reshape(-1,1))
@@ -160,6 +161,8 @@ for seed in range(seeds):
     )
 
     neptune.log_image('univariate_plot_scaled1', fig2)
+    ax.get_legend().remove()
+    log_chart(name='univariate_plot_scaled1', chart=fig2)
 
     # fig3, ax = plot_series(
     # y_train,
@@ -194,10 +197,8 @@ for seed in range(seeds):
 
     lossplot = s.plot_training_error()
     neptune.log_image('training_loss', lossplot)
-
+    
     ax.get_legend().remove()
-    log_chart(name='univariate_plot', chart=fig)
-    log_chart(name='univariate_plot_scaled1', chart=fig2)
     log_chart(name='univariate_plot_scaled2', chart=fig3)
 
     neptune.stop()
