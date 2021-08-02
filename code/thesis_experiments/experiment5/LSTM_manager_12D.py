@@ -262,12 +262,12 @@ class LSTMHandler():
         def func(trial):	
             tw = trial.suggest_int('tw', 20, 600)	
             ep = trial.suggest_int('ep', 1, 2)	
-            lr = trial.suggest_uniform('lr', 0.00001, 0.01)	
-            hls = trial.suggest_int('hls', 1, 100)	
+            lr = trial.suggest_uniform('lr', 0.000001, 0.01)	
+            hls = trial.suggest_int('hls', 1, 200)	
             opt = trial.suggest_categorical("optimizer", ["Adam", "RMSprop", "SGD"]) 	
-            loss = trial.suggest_categorical("loss", ["MSELoss"]) 	
+            loss = "MSELoss"
             stackedlayers = trial.suggest_int('stacked', 1, 2)	
-            dropout = trial.suggest_uniform('dropout', 0.0, 0.65)	
+            dropout = trial.suggest_uniform('dropout', 0.0, 0.7)	
             PARAMS = {'epochs': ep,	
             'lr': lr,	
             'hls' : hls,	
