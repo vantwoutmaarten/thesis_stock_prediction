@@ -243,7 +243,7 @@ class LSTMHandler():
                 modeloutput = model(seq).item()
                 # test_inputs = torch.cat((test_inputs, modeloutput), 0)	
                 	
-                test_inputs.append([modeloutput, np.NAN, np.NAN,np.NAN,np.NAN,np.NAN])	
+                test_inputs.append([modeloutput, np.NAN, np.NAN,np.NAN,np.NAN,np.NAN, np.NAN, np.NAN, np.NAN, np.NAN, np.NAN, np.NAN])	
         actual_predictions = self.scaler.inverse_transform(np.array(test_inputs[-self.test_data_size:]).reshape(-1, 12))
 
         def invert_difference(dataset, lasttrainlabel):
