@@ -8,9 +8,11 @@ import numpy as np
 import pandas as pd
 from sktime.utils.plotting import plot_series
 from sktime.performance_metrics.forecasting import sMAPE, smape_loss
+from sklearn.preprocessing import MinMaxScaler
 from torch.random import seed
 
 import LSTM_manager_12D
+
 
 import optuna
 
@@ -79,9 +81,46 @@ for seed in range(seeds):
     data = df.filter(items=[data_name, EnterpriseValue_meanlast260, EnterpriseValue_linearfit260, PeRatio_meanlast260,
      PeRatio_linearfit260, ForwardPeRatio_meanlast260, ForwardPeRatio_linearfit260, PegRatio_meanlast260, PegRatio_linearfit260, EnterprisesValueEBITDARatio_meanlast260, EnterprisesValueEBITDARatio_linearfit260, time_lag])
 
-
     test_size = 20
     # The test size here is 20, this creates the split between what data is known and not known, like training and test.
+    y_train, y_test = temporal_train_test_split(data[data_name], test_size=test_size)
+
+    s = LSTM_manager_12D.LSTMHandler(seed = seed)
+    # the test size in this case is 1, since we are only trying to predict 1 value, but 20 steps ahead. 
+    s.create_train_test_data(data = data,
+     data_name = data_name,
+     test_size=test_size
+     )
+
+    s.create_trained_model(params=PARAMS)
+
+    
+
+    y_pred = s.make_predictions_from_model()
+
+    y_test_to_predict = y_test[-test_size:]
+
+    smape = smape_loss(y_test_to_predict, y_pred)
+    neptune.log_metric('smape', smape)
+
+    y_train = y_train
+    # The rest of the input can be added later after scaling.
+    fig, ax = plot_series(
+        y_train,
+        y_test, y_pred,
+        labels=["y_train","y_test", "y_pred"]
+        )
+
+    neptune.log_image('univariate_plot', fig)
+
+    # make the general scaler for all the columns and make the fitted scaler for the y_pred
+    scaler = MinMaxScaler(feature_range=(-1, 1))
+    fittedscaler = scaler.fit(data[data_name].values.reshape(-1,1))
+    scaler = MinMaxScaler(feature_range=(-1, 1))
+
+    data_scaled = scaler.fit_transform(data)
+    data = pd.DataFrame(data_scaled, columns=data.columns)
+
     y_train, y_test = temporal_train_test_split(data[data_name], test_size=test_size)
 
     y_train_EV_meanlast260 , y_test_EV_meanlast260 = temporal_train_test_split(data[EnterpriseValue_meanlast260], test_size=test_size)
@@ -101,55 +140,67 @@ for seed in range(seeds):
 
     y_train_time_lag, y_test_time_lag= temporal_train_test_split(data[time_lag], test_size=test_size)
 
-    s = LSTM_manager_12D.LSTMHandler(seed = seed)
-    # the test size in this case is 1, since we are only trying to predict 1 value, but 20 steps ahead. 
-    s.create_train_test_data(data = data,
-     data_name = data_name,
-     train_EV_meanlast260 = y_train_EV_meanlast260,
-     train_EV_linearfit260 = y_train_EV_linearfit260,
-     train_PE_meanlast260 = y_train_PE_meanlast260,
-     train_PE_linearfit260 = y_train_PE_linearfit260,
-     train_Forward_PE_meanlast260 = y_train_Forward_PE_meanlast260,
-     train_Forward_PE_linearfit260 = y_train_Forward_PE_linearfit260,
-     train_PEG_meanlast260 = y_train_PEG_meanlast260,
-     train_PEG_linearfit260 = y_train_PEG_linearfit260,
-     train_EV_EBITDA_meanlast260 = y_train_EV_EBITDA_meanlast260,
-     train_EV_EBITDA_linearfit260 = y_train_EV_EBITDA_linearfit260,
-     train_time_lag = y_train_time_lag,
-     test_size=test_size
-     )
-
-    s.create_trained_model(params=PARAMS)
-
     
+  
+    indexpred = list(y_pred.index)
+    y_pred = fittedscaler.transform(y_pred.values.reshape(-1,1))
+    y_pred = pd.Series(y_pred.reshape(-1))
+    y_pred.index = indexpred
 
-    y_pred = s.make_predictions_from_model()
+    fig2, ax = plot_series(
+    y_train,
+    y_train_EV_meanlast260,
+    y_train_PE_meanlast260,
+    y_train_Forward_PE_meanlast260,
+    y_train_PEG_meanlast260,
+    y_train_EV_EBITDA_meanlast260,
+    y_test, y_pred,
+    labels=["y_train","EV_meanlast260","PE_meanlast260","Forward_PE_meanlast260",
+    "PEG_meanlast260","EV_EBITDA_meanlast260","y_test", "y_pred"]
+    )
 
-    y_test_to_predict = y_test[-test_size:]
+    neptune.log_image('univariate_plot_scaled1', fig2)
 
+    # fig3, ax = plot_series(
+    # y_train,
+    # y_train_EV_meanlast260,
+    # y_train_EV_linearfit260,
+    # y_train_PE_meanlast260,
+    # y_train_PE_linearfit260,
+    # y_train_Forward_PE_meanlast260,
+    # y_train_Forward_PE_linearfit260,
+    # y_train_PEG_meanlast260,
+    # y_train_PEG_linearfit260,
+    # y_train_EV_EBITDA_meanlast260,
+    # y_train_EV_EBITDA_linearfit260,
+    # y_train_time_lag,
+    # y_test, y_pred,
+    # labels=["y_train","EV_meanlast260","EV_linearfit260","PE_meanlast260", "linearfit260","Forward_PE_meanlast260","Forward_PE_linearfit260",
+    # "PEG_meanlast260","PEG_linearfit260","EV_EBITDA_meanlast260","EV_EBITDA_linearfit260","time_lag", "y_test", "y_pred"]
+    # )
+    fig3, ax = plot_series(
+    y_train,
+    y_train_EV_linearfit260,
+    y_train_PE_linearfit260,
+    y_train_Forward_PE_linearfit260,
+    y_train_PEG_linearfit260,
+    y_train_EV_EBITDA_linearfit260,
+    y_test, y_pred,
+    labels=["y_train","EV_linearfit260", "PE_linearfit260","Forward_PE_linearfit260",
+    "PEG_linearfit260","EV_EBITDA_linearfit260","y_test", "y_pred"]
+    )
 
-    smape = smape_loss(y_test_to_predict, y_pred)
-    neptune.log_metric('smape', smape)
-
-    y_train = y_train
-    # The rest of the input can be added later after scaling.
-    fig, ax = plot_series(
-        y_train,
-        y_test, y_pred,
-        labels=["y_train","y_test", "y_pred"]
-        )
-    
-    neptune.log_image('univariate_plot', fig)
+    neptune.log_image('univariate_plot_scaled2', fig3)
 
     lossplot = s.plot_training_error()
     neptune.log_image('training_loss', lossplot)
 
     ax.get_legend().remove()
     log_chart(name='univariate_plot', chart=fig)
+    log_chart(name='univariate_plot_scaled1', chart=fig2)
+    log_chart(name='univariate_plot_scaled2', chart=fig3)
 
     neptune.stop()
-
-
 
 ############## OPTIMIZER ##################
 # # Create experiment

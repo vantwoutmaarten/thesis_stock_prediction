@@ -66,18 +66,7 @@ class LSTMHandler():
         Init class	
         """	
         self.data = None	
-        self.data_name = None	
-        self.train_EV_meanlast260 = None,
-        self.train_EV_linearfit260 = None,
-        self.train_PE_meanlast260 = None,
-        self.train_PE_linearfit260 = None,
-        self.train_Forward_PE_meanlast260 = None,
-        self.train_Forward_PE_linearfit260 = None,
-        self.train_PEG_meanlast260 = None,
-        self.train_PEG_linearfit260 = None,
-        self.train_EV_EBITDA_meanlast260 = None,
-        self.train_EV_EBITDA_linearfit260 = None,
-        self.train_time_lag = None,
+        self.data_name = None
         
         self.lasttrainlabel = None
         # use a train windows that is domain dependent here 365 since it is daily data per year	
@@ -95,33 +84,11 @@ class LSTMHandler():
 
     def create_train_test_data(self, data = None,
      data_name = None,
-     train_EV_meanlast260 = None,
-     train_EV_linearfit260 = None,
-     train_PE_meanlast260 = None,
-     train_PE_linearfit260 = None,
-     train_Forward_PE_meanlast260 = None,
-     train_Forward_PE_linearfit260 = None,
-     train_PEG_meanlast260 = None,
-     train_PEG_linearfit260 = None,
-     train_EV_EBITDA_meanlast260 = None,
-     train_EV_EBITDA_linearfit260 = None,
-     train_time_lag = None,
      test_size=365
      ):	
         # Create a new dataframe with only the 'Close column'	
         self.data = data	
         self.data_name = data_name	
-        self.train_EV_meanlast260 = train_EV_meanlast260
-        self.train_EV_linearfit260 = train_EV_linearfit260
-        self.train_PE_meanlast260 = train_PE_meanlast260
-        self.train_PE_linearfit260 = train_PE_linearfit260
-        self.train_Forward_PE_meanlast260 = train_Forward_PE_meanlast260
-        self.train_Forward_PE_linearfit260 = train_Forward_PE_linearfit260
-        self.train_PEG_meanlast260 = train_PEG_meanlast260
-        self.train_PEG_linearfit260 = train_PEG_linearfit260
-        self.train_EV_EBITDA_meanlast260 = train_EV_EBITDA_meanlast260
-        self.train_EV_EBITDA_linearfit260 = train_EV_EBITDA_linearfit260
-        self.train_time_lag = train_time_lag
         all_data = self.data
 
 
