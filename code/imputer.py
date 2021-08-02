@@ -25,8 +25,8 @@ def createImputedColumns(df, col_name,
         createCubic260FitColumn(df, col_name, cubic260fit_incl_imputation)
 
 def createLinear260FitColumn(df, col_name, linear260fit_incl_imputation):
-    # new_col_name = col_name + '_linearfit260'
-    new_col_name = 'Close_shifted'+  '_linearfit260'
+    new_col_name = col_name + '_linearfit260'
+    # new_col_name = 'Close_shifted'+  '_linearfit260'
     # new_col_name = col_name + '_imputed'
     degree = 1
 
@@ -70,8 +70,8 @@ def createLinear260FitColumn(df, col_name, linear260fit_incl_imputation):
     df.to_csv(FILEPATH, index=False)
 
 def createCubic260FitColumn(df, col_name, cubic260fit_incl_imputation):
-    # new_col_name = col_name + '_cubicfit260'
-    new_col_name = 'Close_shifted'+  '_cubicfit260'
+    new_col_name = col_name + '_cubicfit260'
+    # new_col_name = 'Close_shifted'+  '_cubicfit260'
     # new_col_name = col_name + '_imputed'
     degree = 3
 
@@ -114,8 +114,8 @@ def createCubic260FitColumn(df, col_name, cubic260fit_incl_imputation):
     df.to_csv(FILEPATH, index=False)
 
 def createMeanOfLast260Column(df, col_name, windowmean_incl_imputation):
-    # new_col_name = col_name + '_meanlast260'
-    new_col_name = 'Close_shifted'+  '_meanlast260'
+    new_col_name = col_name + '_meanlast260'
+    # new_col_name = 'Close_shifted'+  '_meanlast260'
     # new_col_name = col_name + '_imputed'
 
     windowmean_imputed = df[col_name].copy()
@@ -152,8 +152,8 @@ def createMeanOfLast260Column(df, col_name, windowmean_incl_imputation):
     df.to_csv(FILEPATH, index=False)
 
 def createGlobalMeanFilledColumn(df, col_name, globalmean_incl_imputation):
-    # new_col_name = col_name + '_globalmean'
-    new_col_name = 'Close_shifted'+ '_globalmean'
+    new_col_name = col_name + '_globalmean'
+    # new_col_name = 'Close_shifted'+ '_globalmean'
     # new_col_name = col_name + '_imputed'
 
     globalmean_missing = df[col_name].copy()
@@ -183,8 +183,8 @@ def createGlobalMeanFilledColumn(df, col_name, globalmean_incl_imputation):
     df.to_csv(FILEPATH, index=False)
 
 def createForwardFilledColumn(df, col_name):
-    # new_col_name = col_name + '_forwardfill'
-    new_col_name = 'Close_shifted'+ '_forwardfill'
+    new_col_name = col_name + '_forwardfill'
+    # new_col_name = 'Close_shifted'+ '_forwardfill'
     # new_col_name = col_name + '_imputed'
 
     forwardfill_missing = df[col_name].copy()
@@ -204,6 +204,7 @@ def createMissingfeatures(df, col_name):
     new_col_missing = df['missing-1or1']
 
     column_to_impute = df[col_name].copy()
+
     for day in range(df['Date'].count()):
             if(np.isnan(column_to_impute[day])):
                 new_col_missing[day] = -1
@@ -228,9 +229,9 @@ def createMissingfeatures(df, col_name):
 
 # FILEPATH = "./synthetic_data/univariate_missingness/noisy_sin_period126_seasonalperiod628_year7_missing33_seed2.csv"
 # FILEPATH = "./data_price/imputed_data/Microsoft/missing90/MSFT_Shifted_30ahead.csv"
-FILEPATH = "./thesis_datasets/Dataset4/AAPL_Price_andQuarterly.csv"
+FILEPATH = "./thesis_datasets/Dataset4/KO_Price_and_Quarterly.csv"
 
-df = pd.read_csv(FILEPATH)
+df = pd.read_csv(FILEPATH, thousands=',')
 # df = pd.read_csv(FILEPATH, index_col=0)
 # col_name = 'noisy_sin_random_missing'
 # col_name = 'Close_ahead30_missing90'
@@ -242,24 +243,21 @@ col_name4 = 'PegRatio'
 col_name5 = 'EnterprisesValueEBITDARatio'
 
 
-
-
-
 createImputedColumns(df, col_name1, 
-                    forwardfill = False, globalmean = False, windowof260mean = True, linear260fit = False, cubic260fit = True,
+                    forwardfill = True, globalmean = True, windowof260mean = True, linear260fit = True, cubic260fit = True,
                     globalmean_incl_imputation=False, windowmean_incl_imputation=False, linear260fit_incl_imputation=False, cubic260fit_incl_imputation=False)
 createImputedColumns(df, col_name2, 
-                    forwardfill = False, globalmean = False, windowof260mean = True, linear260fit = False, cubic260fit = True,
+                    forwardfill = True, globalmean = True, windowof260mean = True, linear260fit = True, cubic260fit = True,
                     globalmean_incl_imputation=False, windowmean_incl_imputation=False, linear260fit_incl_imputation=False, cubic260fit_incl_imputation=False)
 createImputedColumns(df, col_name3, 
-forwardfill = False, globalmean = False, windowof260mean = True, linear260fit = False, cubic260fit = True,
-globalmean_incl_imputation=False, windowmean_incl_imputation=False, linear260fit_incl_imputation=False, cubic260fit_incl_imputation=False)
+                    forwardfill = True, globalmean = True, windowof260mean = True, linear260fit = True, cubic260fit = True,
+                    globalmean_incl_imputation=False, windowmean_incl_imputation=False, linear260fit_incl_imputation=False, cubic260fit_incl_imputation=False)
 createImputedColumns(df, col_name4, 
-forwardfill = False, globalmean = False, windowof260mean = True, linear260fit = False, cubic260fit = True,
-globalmean_incl_imputation=False, windowmean_incl_imputation=False, linear260fit_incl_imputation=False, cubic260fit_incl_imputation=False)
+                    forwardfill = True, globalmean = True, windowof260mean = True, linear260fit = True, cubic260fit = True,
+                    globalmean_incl_imputation=False, windowmean_incl_imputation=False, linear260fit_incl_imputation=False, cubic260fit_incl_imputation=False)
 createImputedColumns(df, col_name5, 
-forwardfill = False, globalmean = False, windowof260mean = True, linear260fit = False, cubic260fit = True,
-globalmean_incl_imputation=False, windowmean_incl_imputation=False, linear260fit_incl_imputation=False, cubic260fit_incl_imputation=False)
+                    forwardfill = True, globalmean = True, windowof260mean = True, linear260fit = True, cubic260fit = True,
+                    globalmean_incl_imputation=False, windowmean_incl_imputation=False, linear260fit_incl_imputation=False, cubic260fit_incl_imputation=False)
 
 
 createMissingfeatures(df, col_name1)
