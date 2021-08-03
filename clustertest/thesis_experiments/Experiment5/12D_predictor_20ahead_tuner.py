@@ -11,7 +11,8 @@ from sktime.performance_metrics.forecasting import sMAPE, smape_loss
 from sklearn.preprocessing import MinMaxScaler
 from torch.random import seed
 
-import thesis_experiments.Experiment5.LSTM_manager_12D as LSTM_manager_12D
+import thesis_experiments.experiment5.LSTM_manager_12D as LSTM_manager_12D
+
 
 import optuna
 
@@ -36,11 +37,11 @@ def getDataInfo(datafilename):
     neptune.log_text('imputation', str(imputation))
 
 # Create experiment
-neptune.create_experiment('12D_20-step ahead optimization', upload_source_files=['../LSTM_manager_6D_20ahead.py', '12D_predictor_20ahead_tuner.py'], tags=['optimization', '12D-prediction', '4-year', '20-step-ahead', '20-predictions','quarterly'])
+neptune.create_experiment('12D_20-step ahead predict_exp5_test-optimization', upload_source_files=['../LSTM_manager_12D.py', '12D_predictor_20ahead_tuner.py'], tags=['optimization', '12D-prediction', '4-year', '20-step-ahead', '20-predictions','quarterly'])
 
 ############################  Single 20-step ahead prediction 6-D ##########################
-FILEPATH = os.getenv('arg1')
-# FILEPATH = './thesis_datasets/Dataset4/AAPL_Price_and_Quarterly.csv'
+# FILEPATH = os.getenv('arg1')
+FILEPATH = './thesis_datasets/Dataset4/AAPL_Price_and_Quarterly.csv'
 getDataInfo(FILEPATH)
 df = pd.read_csv(FILEPATH)	
 neptune.set_property('data', FILEPATH)

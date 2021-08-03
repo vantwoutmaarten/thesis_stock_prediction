@@ -11,7 +11,7 @@ from sktime.performance_metrics.forecasting import sMAPE, smape_loss
 from sklearn.preprocessing import MinMaxScaler
 from torch.random import seed
 
-import LSTM_manager_12D
+import thesis_experiments.experiment3.LSTM_manager_11D as LSTM_manager_11D
 
 
 import optuna
@@ -20,7 +20,7 @@ import neptune
 from neptunecontrib.api import log_chart
 import os
 
-neptune.init(project_qualified_name='mavantwout/thesis-experiment-test',
+neptune.init(project_qualified_name='mavantwout/Experiment-3',
              api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiODBkNzdjMDUtYmYxZi00ODFjLWExN2MtNjk3Y2MwZDE5N2U2In0=',
              )
 def getDataInfo(datafilename, seed):
@@ -37,23 +37,23 @@ def getDataInfo(datafilename, seed):
     neptune.log_text('imputation', str(imputation))
     neptune.log_text('seed', str(seed))
 
-PARAMS = {'epochs': 2,
-        'lr':  0.00029177560092619997,
-        'hls' : 28,
-        'train_window': 20, 
-        'opt' : 'RMSprop',
+PARAMS = {'epochs': 80,
+        'lr':  0.004,
+        'hls' : 90,
+        'train_window': 380, 
+        'opt' : 'SGD',
         'loss' : 'MSELoss',
-        'dropout': 0.0,
-        'num_layers': 1}
+        'dropout': 0.5,
+        'num_layers': 2}
 
-seeds = 1
+seeds = 5
 for seed in range(seeds):
     # Create experiment
-    neptune.create_experiment('12D_20-step ahead predict_exp5_test-local', params = PARAMS, upload_source_files=['../timeseries_pytorch_simpleLSTM/LSTM_manager_6D_20ahead.py', '6D_predictor_20ahead_20pred.py'], tags=['single_run', '6D-prediction', '4-year', '20-step-ahead', '20-predictions', 'shifted30', 'minmax-11','returns','excluding_imputedvalues','seed'+str(seed)])
+    neptune.create_experiment('11D_20-step ahead predict_exp3', params = PARAMS, upload_source_files=['./thesis_experiments/experiment3/LSTM_manager_11D.py', './thesis_experiments/experiment3/11_predictor_.py'], tags=['single_run', 'no-extra-feature', '11D-prediction', '4-year', '20-step-ahead', '20-predictions', 'quarterly','seed'+str(seed)])
 
     ############################  Single 20-step ahead prediction 6-D ##########################
-    # FILEPATH = os.getenv('arg1')
-    FILEPATH = './thesis_datasets/Dataset4/AAPL_Price_and_Quarterly.csv'
+    FILEPATH = os.getenv('arg1')
+    # FILEPATH = './thesis_datasets/Dataset4/AAPL_Price_and_Quarterly.csv'
     getDataInfo(FILEPATH, seed)
     df = pd.read_csv(FILEPATH)	
     neptune.set_property('data', FILEPATH)
@@ -75,17 +75,15 @@ for seed in range(seeds):
     # feature 10, 11
     EnterprisesValueEBITDARatio_meanlast260 = 'EnterprisesValueEBITDARatio_meanlast260'
     EnterprisesValueEBITDARatio_linearfit260 = 'EnterprisesValueEBITDARatio_linearfit260'
-    # feature 12
-    time_lag = 'time_lag'
     
     data = df.filter(items=[data_name, EnterpriseValue_meanlast260, EnterpriseValue_linearfit260, PeRatio_meanlast260,
-     PeRatio_linearfit260, ForwardPeRatio_meanlast260, ForwardPeRatio_linearfit260, PegRatio_meanlast260, PegRatio_linearfit260, EnterprisesValueEBITDARatio_meanlast260, EnterprisesValueEBITDARatio_linearfit260, time_lag])
+     PeRatio_linearfit260, ForwardPeRatio_meanlast260, ForwardPeRatio_linearfit260, PegRatio_meanlast260, PegRatio_linearfit260, EnterprisesValueEBITDARatio_meanlast260, EnterprisesValueEBITDARatio_linearfit260])
 
     test_size = 20
     # The test size here is 20, this creates the split between what data is known and not known, like training and test.
     y_train, y_test = temporal_train_test_split(data[data_name], test_size=test_size)
 
-    s = LSTM_manager_12D.LSTMHandler(seed = seed)
+    s = LSTM_manager_11D.LSTMHandler(seed = seed)
     # the test size in this case is 1, since we are only trying to predict 1 value, but 20 steps ahead. 
     s.create_train_test_data(data = data,
      data_name = data_name,
@@ -112,6 +110,8 @@ for seed in range(seeds):
         )
 
     neptune.log_image('univariate_plot', fig)
+    ax.get_legend().remove()
+    log_chart(name='univariate_plot', chart=fig)
 
     # make the general scaler for all the columns and make the fitted scaler for the y_pred
     scaler = MinMaxScaler(feature_range=(-1, 1))
@@ -138,10 +138,6 @@ for seed in range(seeds):
     y_train_EV_EBITDA_meanlast260, y_test_EV_EBITDA_meanlast260= temporal_train_test_split(data[EnterprisesValueEBITDARatio_meanlast260], test_size=test_size)
     y_train_EV_EBITDA_linearfit260, y_test_EV_EBITDA_linearfit260= temporal_train_test_split(data[EnterprisesValueEBITDARatio_linearfit260], test_size=test_size)
 
-    y_train_time_lag, y_test_time_lag= temporal_train_test_split(data[time_lag], test_size=test_size)
-
-    
-  
     indexpred = list(y_pred.index)
     y_pred = fittedscaler.transform(y_pred.values.reshape(-1,1))
     y_pred = pd.Series(y_pred.reshape(-1))
@@ -160,6 +156,8 @@ for seed in range(seeds):
     )
 
     neptune.log_image('univariate_plot_scaled1', fig2)
+    ax.get_legend().remove()
+    log_chart(name='univariate_plot_scaled1', chart=fig2)
 
     # fig3, ax = plot_series(
     # y_train,
@@ -194,10 +192,8 @@ for seed in range(seeds):
 
     lossplot = s.plot_training_error()
     neptune.log_image('training_loss', lossplot)
-
+    
     ax.get_legend().remove()
-    log_chart(name='univariate_plot', chart=fig)
-    log_chart(name='univariate_plot_scaled1', chart=fig2)
     log_chart(name='univariate_plot_scaled2', chart=fig3)
 
     neptune.stop()
