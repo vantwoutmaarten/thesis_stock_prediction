@@ -61,7 +61,6 @@ for seed in range(seeds):
     neptune.set_property('data', FILEPATH)
     
     # imputer = os.getenv('arg2')
-    imputer = 'meanlast260'
     getDataInfo(FILEPATH, seed)
 
     # output

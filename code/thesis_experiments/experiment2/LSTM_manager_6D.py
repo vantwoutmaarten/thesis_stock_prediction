@@ -67,12 +67,6 @@ class LSTMHandler():
         """	
         self.data = None	
         self.data_name = None	
-        self.train_data_normalized = None	
-        self.train_lagged_forwardfill= None
-        self.train_lagged_globalmean= None
-        self.train_lagged_meanlast30= None
-        self.train_lagged_linearfit30= None
-        self.train_lagged_cubicfit30= None
 
         self.lasttrainlabel = None
         # use a train windows that is domain dependent here 365 since it is daily data per year	
@@ -90,21 +84,11 @@ class LSTMHandler():
 
     def create_train_test_data(self, data = None,
      data_name = None,
-     train_lagged_forwardfill=None,
-     train_lagged_globalmean=None,
-     train_lagged_meanlast30=None,
-     train_lagged_linearfit30=None,
-     train_lagged_cubicfit30=None,
      test_size=365
      ):	
         # Create a new dataframe with only the 'Close column'	
         self.data = data	
-        self.data_name = data_name	
-        self.train_lagged_forwardfill= train_lagged_forwardfill
-        self.train_lagged_globalmean=train_lagged_globalmean
-        self.train_lagged_meanlast30=train_lagged_meanlast30
-        self.train_lagged_linearfit30=train_lagged_linearfit30
-        self.train_lagged_cubicfit30=train_lagged_cubicfit30
+        self.data_name = data_name
 
         all_data = self.data
 
@@ -302,67 +286,6 @@ class LSTMHandler():
         study = optuna.create_study()	
         study.optimize(func, n_trials=2, callbacks=[neptune_callback])	
         opt_utils.log_study_info(study)
-
-    # def explain_simple_prediction(self, modelpath=None, modelstate=None):
-
-    #     # The SHAP deepexplainer needs a model and a background. Here the trained model is loaded.
-    #     device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #assuming gpu is available	
-    #     model = LSTM(hidden_layer_size=self.hidden_layer_size, num_layers = self.num_layers).to(device)	
-    #     if(modelpath != None):	
-    #         model.load_state_dict(torch.load(modelpath))	
-    #     elif(modelstate != None):	
-    #         model.load_state_dict(modelstate)	
-    #     else:	
-    #         model.load_state_dict(self.stateDict)	
-
-    #     # The SHAP deepexplainer needs a model and a background. Here the background is created and 15 samples from the trainset are selected to calculate the expected value.
-    #     training_windows = np.array([trainingwindow[0] for trainingwindow in self.train_inout_seq])
-    #     background = training_windows[np.random.choice(training_windows.shape[0], 5, replace=False)]
-
-    #     # training_windows = np.array([trainingwindow[0].cpu().detach().numpy() for trainingwindow in self.train_inout_seq])
-
-    #     print(type(background))
-    #     print(background.shape)
-
-    #     background = background.tolist()
-    #     # background = background.astype(float)
-    #     print(type(background))
-      
-    #     background = torch.stack(background)
-        
-    #     print(type(background))
-
-    #     # print(background.shape[0])
-    #     # print(background.shape)
-    #     # Here the deepexplainer is made using the trained model and the samples to come up with averages.
-    #     print("create deepexplainer")
-    #     e = shap.DeepExplainer(model, background.view(5,20,2))
-
-    #     # To evaluate a prediction with the explainer test inputs should be specified.
-
-    #     # THIS CHANGE IS MADE TO MAKE THE TESTINOUTSEQ BE FIT, BUT MAYBE WE DO NOT WANT THIS AND THE PREDICTION GETS CRAZY.
-    #     test_inputs = self.train_data_normalized[-(self.train_window+20):]
-    #     # test_inputs = self.train_data_normalized[-(self.train_window+19):].tolist()	
-    #     self.test_inout_seq = self._create_inout_sequences(test_inputs, self.train_window)
-
-    #     evaluation_windows = np.array([evaluation_window[0] for evaluation_window in self.test_inout_seq])
-    #     evaluation_windows = evaluation_windows.tolist()
-        
-    #     print(type(evaluation_windows))
-    #     # now the prediction(s) to explain is specified. 
-    #     prediction_to_explain = evaluation_windows[0].view(1,20,2)
-
-    #     print(type(prediction_to_explain))
-    #     print(prediction_to_explain.shape)
-        
-    #     print("shap values")
-
-    #     shap_values = e.shap_values(prediction_to_explain)
-
-    #     shap.initjs()
-    #     shap.force_plot(e.expected_value, shap_values, prediction_to_explain)
-    #     # shap.text_plot(shap_values)
-    #     return
 
     def _create_inout_sequences(self, input_data, tw):	
         inout_seq = []	
