@@ -11,7 +11,7 @@ from sktime.performance_metrics.forecasting import sMAPE, smape_loss
 from sklearn.preprocessing import MinMaxScaler
 from torch.random import seed
 
-import LSTM_manager_7D
+import LSTM_manager_6D
 
 
 import optuna
@@ -50,7 +50,7 @@ PARAMS = {'epochs': 2,
 seeds = 1
 for seed in range(seeds):
     # Create experiment
-    neptune.create_experiment('7D_20-step ahead predict_exp5_test-cluster-time-lag', params = PARAMS, upload_source_files=['../LSTM_manager_7D.py', '7D_predictor_time_lag.py'], tags=['single_run', 'time-lag', '7D-prediction', '4-year', '20-step-ahead', '20-predictions', 'quarterly','seed'+str(seed)])
+    neptune.create_experiment('6D_20-step ahead predict_exp3_test', params = PARAMS, upload_source_files=['../LSTM_manager_6D.py', '6D_predictor.py'], tags=['single_run', 'no-extra-feature', '6D-prediction', '4-year', '20-step-ahead', '20-predictions', 'quarterly','seed'+str(seed)])
 
     ############################  Single 20-step ahead prediction 6-D ##########################
     # FILEPATH = os.getenv('arg1')
@@ -75,17 +75,15 @@ for seed in range(seeds):
     PegRatio = 'PegRatio_' + imputer
     # feature 6
     EnterprisesValueEBITDARatio = 'EnterprisesValueEBITDARatio_' + imputer
-    # feature 7
-    time_lag = 'time_lag'
     
     data = df.filter(items=[data_name, EnterpriseValue, PeRatio,
-     ForwardPeRatio, PegRatio, EnterprisesValueEBITDARatio, time_lag])
+     ForwardPeRatio, PegRatio, EnterprisesValueEBITDARatio])
 
     test_size = 20
     # The test size here is 20, this creates the split between what data is known and not known, like training and test.
     y_train, y_test = temporal_train_test_split(data[data_name], test_size=test_size)
 
-    s = LSTM_manager_7D.LSTMHandler(seed = seed)
+    s = LSTM_manager_6D.LSTMHandler(seed = seed)
     # the test size in this case is 1, since we are only trying to predict 1 value, but 20 steps ahead. 
     s.create_train_test_data(data = data,
      data_name = data_name,
@@ -132,8 +130,6 @@ for seed in range(seeds):
     y_train_PEG, y_test_PEG = temporal_train_test_split(data[PegRatio], test_size=test_size)
 
     y_train_EV_EBITDA , y_test_EV_EBITDA = temporal_train_test_split(data[EnterprisesValueEBITDARatio], test_size=test_size)
-
-    y_train_time_lag, y_test_time_lag= temporal_train_test_split(data[time_lag], test_size=test_size)
 
     indexpred = list(y_pred.index)
     y_pred = fittedscaler.transform(y_pred.values.reshape(-1,1))

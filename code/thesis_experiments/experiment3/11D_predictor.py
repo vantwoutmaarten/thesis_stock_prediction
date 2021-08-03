@@ -11,7 +11,7 @@ from sktime.performance_metrics.forecasting import sMAPE, smape_loss
 from sklearn.preprocessing import MinMaxScaler
 from torch.random import seed
 
-import LSTM_manager_12D
+import LSTM_manager_11D
 
 
 import optuna
@@ -49,7 +49,7 @@ PARAMS = {'epochs': 1,
 seeds = 1
 for seed in range(seeds):
     # Create experiment
-    neptune.create_experiment('12D_20-step ahead predict_exp5_test-local_timelag', params = PARAMS, upload_source_files=['../LSTM_manager_12D.py', '12D_predictor_.py'], tags=['single_run', 'time-lag', '12D-prediction', '4-year', '20-step-ahead', '20-predictions', 'quarterly','seed'+str(seed)])
+    neptune.create_experiment('11D_20-step ahead predict_exp3_test-local', params = PARAMS, upload_source_files=['../LSTM_manager_11D.py', '11_predictor_.py'], tags=['single_run', 'no-extra-feature', '11D-prediction', '4-year', '20-step-ahead', '20-predictions', 'quarterly','seed'+str(seed)])
 
     ############################  Single 20-step ahead prediction 6-D ##########################
     # FILEPATH = os.getenv('arg1')
@@ -75,17 +75,15 @@ for seed in range(seeds):
     # feature 10, 11
     EnterprisesValueEBITDARatio_meanlast260 = 'EnterprisesValueEBITDARatio_meanlast260'
     EnterprisesValueEBITDARatio_linearfit260 = 'EnterprisesValueEBITDARatio_linearfit260'
-    # feature 12
-    time_lag = 'time_lag'
     
     data = df.filter(items=[data_name, EnterpriseValue_meanlast260, EnterpriseValue_linearfit260, PeRatio_meanlast260,
-     PeRatio_linearfit260, ForwardPeRatio_meanlast260, ForwardPeRatio_linearfit260, PegRatio_meanlast260, PegRatio_linearfit260, EnterprisesValueEBITDARatio_meanlast260, EnterprisesValueEBITDARatio_linearfit260, time_lag])
+     PeRatio_linearfit260, ForwardPeRatio_meanlast260, ForwardPeRatio_linearfit260, PegRatio_meanlast260, PegRatio_linearfit260, EnterprisesValueEBITDARatio_meanlast260, EnterprisesValueEBITDARatio_linearfit260])
 
     test_size = 20
     # The test size here is 20, this creates the split between what data is known and not known, like training and test.
     y_train, y_test = temporal_train_test_split(data[data_name], test_size=test_size)
 
-    s = LSTM_manager_12D.LSTMHandler(seed = seed)
+    s = LSTM_manager_11D.LSTMHandler(seed = seed)
     # the test size in this case is 1, since we are only trying to predict 1 value, but 20 steps ahead. 
     s.create_train_test_data(data = data,
      data_name = data_name,
@@ -140,9 +138,6 @@ for seed in range(seeds):
     y_train_EV_EBITDA_meanlast260, y_test_EV_EBITDA_meanlast260= temporal_train_test_split(data[EnterprisesValueEBITDARatio_meanlast260], test_size=test_size)
     y_train_EV_EBITDA_linearfit260, y_test_EV_EBITDA_linearfit260= temporal_train_test_split(data[EnterprisesValueEBITDARatio_linearfit260], test_size=test_size)
 
-    y_train_time_lag, y_test_time_lag= temporal_train_test_split(data[time_lag], test_size=test_size)
-
-  
     indexpred = list(y_pred.index)
     y_pred = fittedscaler.transform(y_pred.values.reshape(-1,1))
     y_pred = pd.Series(y_pred.reshape(-1))

@@ -36,7 +36,7 @@ torch.autograd.set_detect_anomaly(True)
 ### even in de docs kijken van PyTorch.	
 ### We are using this now and if it is working then we are changing the error calculation, by changin the train model part and the output size of the model to 1.	
 class LSTM(nn.Module):	
-    def __init__(self, input_size=12, hidden_layer_size=40, output_size=1, dropout = 0.0, num_layers=1):	
+    def __init__(self, input_size=1, hidden_layer_size=40, output_size=1, dropout = 0.0, num_layers=1):	
         super().__init__()
         self.hidden_layer_size = hidden_layer_size	
         self.lstm = nn.LSTM(input_size, hidden_layer_size, dropout=dropout, num_layers=num_layers)	
@@ -48,7 +48,7 @@ class LSTM(nn.Module):
         # input_seq = input_seq.view(int(len(input_seq)/15), 1, 15)	
 
         #the 20 is the trainwindow instead of len(input_seq)
-        input_seq = input_seq.view(len(input_seq), 1, 12)
+        input_seq = input_seq.view(len(input_seq), 1, 1)
         lstm_out, self.hidden_cell = self.lstm(input_seq, self.hidden_cell)
         #the 20 is the trainwindow instead of len(input_seq)
         predictions = self.linear(lstm_out.view(len(input_seq), -1))
@@ -130,7 +130,7 @@ class LSTMHandler():
         train_data_normalized = self.scaler.fit_transform(train_data)	
         # maybe data normalization shoudl only be applied to training data and not on test data	
         # Convert the data to a tensor	
-        self.train_data_normalized = torch.cuda.FloatTensor(train_data_normalized).view(-1,12)
+        self.train_data_normalized = torch.cuda.FloatTensor(train_data_normalized).view(-1,1)
 
 
     def create_trained_model(self, params=None, modelpath=None):	
@@ -210,8 +210,8 @@ class LSTMHandler():
                 modeloutput = model(seq).item()
                 # test_inputs = torch.cat((test_inputs, modeloutput), 0)	
                 	
-                test_inputs.append([modeloutput, np.NAN, np.NAN,np.NAN,np.NAN,np.NAN, np.NAN, np.NAN, np.NAN, np.NAN, np.NAN, np.NAN])	
-        actual_predictions = self.scaler.inverse_transform(np.array(test_inputs[-self.test_data_size:]).reshape(-1, 12))
+                test_inputs.append([modeloutput])	
+        actual_predictions = self.scaler.inverse_transform(np.array(test_inputs[-self.test_data_size:]).reshape(-1, 1))
 
         def invert_difference(dataset, lasttrainlabel):
             diff = list()
