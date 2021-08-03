@@ -29,14 +29,13 @@ torch.autograd.set_detect_anomaly(True)
 # check influence on training time	
 # os.environ[‘CUDA_LAUNCH_BLOCKING’] = 1	
 
-
 #%%	
 ################ CREATE THE PYTORCH LSTM MODEL ###################################	
 ### 2 in 2 uit misschien even kijken hoe dat zit misschien willen we maar output size 1 hebben maar weet niet precies hoe de forward method daarmee omgaat. 	
 ### even in de docs kijken van PyTorch.	
 ### We are using this now and if it is working then we are changing the error calculation, by changin the train model part and the output size of the model to 1.	
 class LSTM(nn.Module):	
-    def __init__(self, input_size=6, hidden_layer_size=40, output_size=1, dropout = 0.0, num_layers=1):	
+    def __init__(self, input_size=5, hidden_layer_size=40, output_size=1, dropout = 0.0, num_layers=1):	
         super().__init__()
         self.hidden_layer_size = hidden_layer_size	
         self.lstm = nn.LSTM(input_size, hidden_layer_size, dropout=dropout, num_layers=num_layers)	
@@ -48,7 +47,7 @@ class LSTM(nn.Module):
         # input_seq = input_seq.view(int(len(input_seq)/15), 1, 15)	
 
         #the 20 is the trainwindow instead of len(input_seq)
-        input_seq = input_seq.view(len(input_seq), 1, 6)
+        input_seq = input_seq.view(len(input_seq), 1, 5)
         lstm_out, self.hidden_cell = self.lstm(input_seq, self.hidden_cell)
         #the 20 is the trainwindow instead of len(input_seq)
         predictions = self.linear(lstm_out.view(len(input_seq), -1))
@@ -160,7 +159,7 @@ class LSTMHandler():
                                     torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda())	
                 y_pred = model(seq)	
                 # y_pred = y_pred.view(1,2)	
-                label = labels[0,0]
+                label = labels[0]
                 single_loss = loss_function(y_pred, label)	
                 # WHEN SHOULD THE LOSS BE AGGREGATED WITH mean()	
                 # single_loss.backward(retain_graph=True)
@@ -204,7 +203,7 @@ class LSTMHandler():
         model.eval()	
         print("model loaded")	
         for i in range(fut_pred):	
-            seq = torch.cuda.FloatTensor(test_inputs[(-self.train_window-19):-19])	
+            seq = torch.cuda.FloatTensor(test_inputs[(-self.train_window-19):-19])[:,1:6]	
             with torch.no_grad():	
                 model.hidden_cell = (torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda(), torch.zeros(self.num_layers, 1, model.hidden_layer_size).cuda())	
                 modeloutput = model(seq).item()
@@ -289,7 +288,7 @@ class LSTMHandler():
     def _create_inout_sequences(self, input_data, tw):	
         inout_seq = []	
         for i in range(len(input_data)-tw-19):	
-            train_seq = input_data[i:i+tw]	
-            train_label = input_data[i+tw+19:i+tw+20]	
+            train_seq = input_data[i:i+tw][:,1:6]	
+            train_label = input_data[i+tw+19:i+tw+20][:,0]	
             inout_seq.append((train_seq, train_label))	
         return inout_seq	

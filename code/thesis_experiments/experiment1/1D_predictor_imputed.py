@@ -25,8 +25,10 @@ neptune.init(project_qualified_name='mavantwout/thesis-experiment-test',
              )
 def getDataInfo(datafilename, columnname, seed):
     split_on_data = datafilename.partition('/Dataset2/')
-    split_for_missing =  split_on_data[2].partition('_Price')
+    split_for_missing =  split_on_data[2].partition('_missing')
     company = split_for_missing[0]
+    missingness = split_for_missing[2].split('.')[0]
+
 
     split_for_imputation= columnname.split('_')
     imputation = split_for_imputation[-1]
@@ -35,6 +37,7 @@ def getDataInfo(datafilename, columnname, seed):
     print(imputation)
 
     neptune.log_text('company', str(company))
+    neptune.log_text('missingness', str(missingness))
     neptune.log_text('imputation', str(imputation))
     neptune.log_text('seed', str(seed))
 
@@ -50,40 +53,31 @@ PARAMS = {'epochs': 2,
 seeds = 1
 for seed in range(seeds):
     # Create experiment
-    neptune.create_experiment('6D_20-step ahead predict_exp3_test', params = PARAMS, upload_source_files=['../LSTM_manager_6D.py', '6D_predictor.py'], tags=['single_run', 'no-extra-feature', '6D-prediction', '4-year', '20-step-ahead', '20-predictions', 'quarterly','seed'+str(seed)])
+    neptune.create_experiment('1D_20-step ahead predict_exp1_test', params = PARAMS, upload_source_files=['../LSTM_manager_1D_imputed.py', '1D_predictor_imputed.py'], tags=['single_run', 'no-extra-feature', '1D-prediction', '4-year', '20-step-ahead', '20-predictions', 'price_imputed','seed'+str(seed)])
 
     ############################  Single 20-step ahead prediction 6-D ##########################
     # FILEPATH = os.getenv('arg1')
-    FILEPATH = './thesis_datasets/Dataset4/AAPL_Price_and_Quarterly.csv'
+    FILEPATH = './thesis_datasets/Dataset2/AAPL_missing985.csv'
     
     df = pd.read_csv(FILEPATH)	
     neptune.set_property('data', FILEPATH)
     
     # imputer = os.getenv('arg2')
-    imputer = 'meanlast260'
-    getDataInfo(FILEPATH, imputer, seed)
+    columnname = 'Close_missing98.5_forwardfill'
+    getDataInfo(FILEPATH, columnname, seed)
 
     # feature 1
     data_name = 'Close'
-    # feature 2
-    EnterpriseValue ='EnterpriseValue_' + imputer
-    # feature 3
-    PeRatio = 'PeRatio_' + imputer
-    # feature 4
-    ForwardPeRatio = 'ForwardPeRatio_' + imputer
-    # feature 5
-    PegRatio = 'PegRatio_' + imputer
-    # feature 6
-    EnterprisesValueEBITDARatio = 'EnterprisesValueEBITDARatio_' + imputer
-    
-    data = df.filter(items=[data_name, EnterpriseValue, PeRatio,
-     ForwardPeRatio, PegRatio, EnterprisesValueEBITDARatio])
+
+    data = df.filter(items=[data_name, columnname])
 
     test_size = 20
     # The test size here is 20, this creates the split between what data is known and not known, like training and test.
-    y_train, y_test = temporal_train_test_split(data[data_name], test_size=test_size)
+    # real observations
+    y_train_out, y_test_out = temporal_train_test_split(data[data_name], test_size=test_size)
+    y_train_in, y_test_in = temporal_train_test_split(data[columnname], test_size=test_size)
 
-    s = LSTM_manager_6D.LSTMHandler(seed = seed)
+    s = LSTM_manager_1D_imputed.LSTMHandler(seed = seed)
     # the test size in this case is 1, since we are only trying to predict 1 value, but 20 steps ahead. 
     s.create_train_test_data(data = data,
      data_name = data_name,
@@ -94,66 +88,26 @@ for seed in range(seeds):
 
     y_pred = s.make_predictions_from_model()
 
-    y_test_to_predict = y_test[-test_size:]
+    y_test_to_predict = y_test_out[-test_size:]
 
     smape = smape_loss(y_test_to_predict, y_pred)
     neptune.log_metric('smape', smape)
 
-    y_train = y_train
-    # The rest of the input can be added later after scaling.
+    # y_train = y_train
+    # # The rest of the input can be added later after scaling.
     fig, ax = plot_series(
-        y_train,
-        y_test, y_pred,
-        labels=["y_train","y_test", "y_pred"]
+        y_train_in,
+        y_train_out,
+        y_test_out, y_pred,
+        labels=["y_train_in","y_train_out", "y_test", "y_pred"]
         )
 
     neptune.log_image('univariate_plot', fig)
     ax.get_legend().remove()
     log_chart(name='univariate_plot', chart=fig)
 
-    # make the general scaler for all the columns and make the fitted scaler for the y_pred
-    scaler = MinMaxScaler(feature_range=(-1, 1))
-    fittedscaler = scaler.fit(data[data_name].values.reshape(-1,1))
-    scaler = MinMaxScaler(feature_range=(-1, 1))
-
-    data_scaled = scaler.fit_transform(data)
-    data = pd.DataFrame(data_scaled, columns=data.columns)
-
-    y_train, y_test = temporal_train_test_split(data[data_name], test_size=test_size)
-
-    y_train_EV , y_test_EV = temporal_train_test_split(data[EnterpriseValue], test_size=test_size)
-
-    y_train_PE, y_test_PE= temporal_train_test_split(data[PeRatio], test_size=test_size)
-
-    y_train_Forward_PE, y_test_Forward_PE = temporal_train_test_split(data[ForwardPeRatio], test_size=test_size)
-
-    y_train_PEG, y_test_PEG = temporal_train_test_split(data[PegRatio], test_size=test_size)
-
-    y_train_EV_EBITDA , y_test_EV_EBITDA = temporal_train_test_split(data[EnterprisesValueEBITDARatio], test_size=test_size)
-
-    indexpred = list(y_pred.index)
-    y_pred = fittedscaler.transform(y_pred.values.reshape(-1,1))
-    y_pred = pd.Series(y_pred.reshape(-1))
-    y_pred.index = indexpred
-
-    fig2, ax = plot_series(
-    y_train,
-    y_train_EV,
-    y_train_PE,
-    y_train_Forward_PE,
-    y_train_PEG,
-    y_train_EV_EBITDA,
-    y_test, y_pred,
-    labels=["y_train",EnterpriseValue,PeRatio,ForwardPeRatio,
-    PegRatio,EnterprisesValueEBITDARatio,"y_test", "y_pred"]
-    )
-
-    neptune.log_image('univariate_plot_scaled', fig2)
 
     lossplot = s.plot_training_error()
     neptune.log_image('training_loss', lossplot)
-
-    ax.get_legend().remove()
-    log_chart(name='univariate_plot_scaled', chart=fig2)
 
     neptune.stop()
