@@ -1,0 +1,16 @@
+Id,Creation Time,Owner,Tags,logs/seed,logs/company,logs/imputation,Running Time,logs/smape (last)
+BAS-18,2021-08-04 19:10:21,mavantwout,"[""seed4"",""price"",""4-year"",""no-extra-feature"",""20-step-ahead"",""single_run"",""1D-prediction"",""20-predictions""]",4,KO,no_imputation,334.116,0.008197377642554429
+BAS-17,2021-08-04 19:04:49,mavantwout,"[""seed3"",""price"",""4-year"",""no-extra-feature"",""20-step-ahead"",""single_run"",""1D-prediction"",""20-predictions""]",3,KO,no_imputation,331.097,0.006338861572674682
+BAS-16,2021-08-04 18:59:18,mavantwout,"[""price"",""seed2"",""4-year"",""no-extra-feature"",""20-step-ahead"",""single_run"",""1D-prediction"",""20-predictions""]",2,KO,no_imputation,330.748,0.005917170669235987
+BAS-15,2021-08-04 18:53:48,mavantwout,"[""seed1"",""price"",""4-year"",""no-extra-feature"",""20-step-ahead"",""single_run"",""1D-prediction"",""20-predictions""]",1,KO,no_imputation,328.562,0.006516998588658229
+BAS-14,2021-08-04 18:48:12,mavantwout,"[""price"",""4-year"",""no-extra-feature"",""20-step-ahead"",""seed0"",""single_run"",""1D-prediction"",""20-predictions""]",0,KO,no_imputation,336.08,0.0315216062900046
+BAS-13,2021-08-04 14:34:57,mavantwout,"[""4-year"",""20-predictions"",""seed4"",""price"",""1D-prediction"",""20-step-ahead"",""no-extra-feature"",""single_run""]",4,MSFT,no_imputation,98.701,0.0408493251023131
+BAS-12,2021-08-04 14:33:18,mavantwout,"[""4-year"",""20-predictions"",""seed3"",""price"",""1D-prediction"",""20-step-ahead"",""no-extra-feature"",""single_run""]",3,MSFT,no_imputation,98.446,0.17011245477478362
+BAS-11,2021-08-04 14:31:38,mavantwout,"[""seed2"",""4-year"",""20-predictions"",""price"",""1D-prediction"",""20-step-ahead"",""no-extra-feature"",""single_run""]",2,MSFT,no_imputation,99.194,0.020414195828138932
+BAS-10,2021-08-04 14:29:58,mavantwout,"[""seed1"",""4-year"",""20-predictions"",""price"",""1D-prediction"",""20-step-ahead"",""no-extra-feature"",""single_run""]",1,MSFT,no_imputation,99.699,0.086271911988278
+BAS-9,2021-08-04 14:28:13,mavantwout,"[""4-year"",""20-predictions"",""seed0"",""price"",""1D-prediction"",""20-step-ahead"",""no-extra-feature"",""single_run""]",0,MSFT,no_imputation,104.378,0.05700624884294557
+BAS-8,2021-08-04 12:14:53,mavantwout,"[""4-year"",""20-step-ahead"",""price"",""no-extra-feature"",""20-predictions"",""1D-prediction"",""seed4"",""single_run""]",4,AAPL,no_imputation,1085.617,0.03241127424336891
+BAS-7,2021-08-04 11:56:52,mavantwout,"[""4-year"",""20-step-ahead"",""price"",""seed3"",""no-extra-feature"",""20-predictions"",""1D-prediction"",""single_run""]",3,AAPL,no_imputation,1079.724,0.028553033922513495
+BAS-6,2021-08-04 11:38:51,mavantwout,"[""4-year"",""20-step-ahead"",""price"",""no-extra-feature"",""20-predictions"",""1D-prediction"",""seed2"",""single_run""]",2,AAPL,no_imputation,1079.208,0.034068541314482316
+BAS-5,2021-08-04 11:20:53,mavantwout,"[""4-year"",""20-step-ahead"",""price"",""no-extra-feature"",""20-predictions"",""1D-prediction"",""seed1"",""single_run""]",1,AAPL,no_imputation,1077.597,0.02937615282278035
+BAS-4,2021-08-04 11:02:37,mavantwout,"[""4-year"",""20-step-ahead"",""price"",""no-extra-feature"",""20-predictions"",""1D-prediction"",""seed0"",""single_run""]",0,AAPL,no_imputation,1095.587,0.029408247771464564

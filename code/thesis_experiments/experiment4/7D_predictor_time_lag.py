@@ -76,8 +76,6 @@ for seed in range(seeds):
     y_train_lagged_cubicfit30, y_test_lagged_cubicfit30 = temporal_train_test_split(data[lagged_imputation_cubicfit30], test_size=test_size)
 
 
-
-
     s = LSTM_manager_7D.LSTMHandler(seed = seed)
     # the test size in this case is 1, since we are only trying to predict 1 value, but 20 steps ahead. 
     s.create_train_test_data(data = data,
