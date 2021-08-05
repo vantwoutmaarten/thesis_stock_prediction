@@ -39,13 +39,13 @@ def getDataInfo(datafilename, seed):
     neptune.log_text('imputation', str(imputation))
     neptune.log_text('seed', str(seed))
 
-PARAMS = {'epochs': 80,
-        'lr':  0.004,
-        'hls' : 90,
-        'train_window': 380, 
-        'opt' : 'SGD',
+PARAMS = {'epochs': 25,
+        'lr':  0.008,
+        'hls' : 125,
+        'train_window': 300, 
+        'opt' : 'RMSprop',
         'loss' : 'MSELoss',
-        'dropout': 0.5,
+        'dropout': 0.1,
         'num_layers': 2}
 
 seeds = 5

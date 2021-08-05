@@ -37,23 +37,22 @@ def getDataInfo(datafilename, seed):
     neptune.log_text('imputation', str(imputation))
     neptune.log_text('seed', str(seed))
 
-PARAMS = {'epochs': 80,
-        'lr':  0.004,
-        'hls' : 90,
-        'train_window': 380, 
-        'opt' : 'SGD',
+PARAMS = {'epochs': 25,
+        'lr':  0.008,
+        'hls' : 125,
+        'train_window': 300, 
+        'opt' : 'RMSprop',
         'loss' : 'MSELoss',
-        'dropout': 0.5,
+        'dropout': 0.1,
         'num_layers': 2}
-
 seeds = 5
 for seed in range(seeds):
     # Create experiment
     neptune.create_experiment('12D_20-step ahead predict_exp5_timelag', params = PARAMS, upload_source_files=['./thesis_experiments/experiment5/LSTM_manager_12D.py', './thesis_experiments/experiment5/12D_predictor_.py'], tags=['single_run', 'time-lag', '12D-prediction', '4-year', '20-step-ahead', '20-predictions', 'quarterly','seed'+str(seed)])
 
     ############################  Single 20-step ahead prediction 6-D ##########################
-    # FILEPATH = os.getenv('arg1')
-    FILEPATH = './thesis_datasets/Dataset4/AAPL_Price_and_Quarterly.csv'
+    FILEPATH = os.getenv('arg1')
+    #FILEPATH = './thesis_datasets/Dataset4/AAPL_Price_and_Quarterly.csv'
     getDataInfo(FILEPATH, seed)
     df = pd.read_csv(FILEPATH)	
     neptune.set_property('data', FILEPATH)
