@@ -111,8 +111,6 @@ for seed in range(seeds):
 
     neptune.stop()
 
-
-
 ############## OPTIMIZER ##################
 # # Create experiment
 # neptune.create_experiment('2D_20-step ahead prediction_seed1_optimization_test', upload_source_files=['../timeseries_pytorch_simpleLSTM/LSTM_manager_2D_20ahead.py', '2D_predictor_20ahead.py'], tags=['optimization', 'single_run', '2D-prediction', '4-year', '20-step-ahead', '6shifted'])
