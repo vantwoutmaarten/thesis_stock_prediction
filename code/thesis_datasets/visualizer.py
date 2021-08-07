@@ -395,6 +395,7 @@ def plot_example_AAPL_features_dataset4():
     ax.get_lines()[6].set_markevery(5)
 
     ax.get_lines()[7].set_markevery(5)
+    
 
     ax.legend()
 
