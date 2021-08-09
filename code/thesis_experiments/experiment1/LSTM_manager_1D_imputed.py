@@ -132,7 +132,6 @@ class LSTMHandler():
         # Convert the data to a tensor	
         self.train_data_normalized = torch.cuda.FloatTensor(train_data_normalized).view(-1,2)
 
-
     def create_trained_model(self, params=None, modelpath=None):	
         # Set Device 	
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #assuming gpu is available	
